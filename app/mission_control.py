@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+import socket
 import subprocess
 from urllib.parse import urlparse, parse_qs
 from assistant_broker import request
@@ -160,6 +161,13 @@ def snapshot():
         result = service_snapshot()
     except (OSError, ValueError):
         result = {'services': {}, 'activities': [], 'events': [], 'board': [], 'reminders': {}, 'deliveries': [], 'error': 'Data broker unavailable'}
+    try:
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as client:
+            client.settimeout(1);client.connect('/run/personal-agent-maintenance/broker.sock')
+            client.sendall(b'{"method":"status","args":{}}\n')
+            with client.makefile('rb') as stream:response=json.loads(stream.readline(5000001))
+        result['maintenance']=response.get('result',{'error':response.get('error','Unavailable')})
+    except (OSError,ValueError):result['maintenance']={'error':'Maintenance service unavailable'}
     result['threads'] = threads()
     if result.get('services', {}).get('gateway') != 'active':
         for row in result['threads']:

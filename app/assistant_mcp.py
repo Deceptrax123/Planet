@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Stdio MCP facade for personal memory, reminders, and agent monitoring."""
 import json
+import math
 import sys
 from pathlib import Path
 from assistant_broker import request
@@ -63,9 +64,49 @@ TOOLS = [
 ]
 
 
+def _validate_schema(value, schema, path="arguments"):
+    expected = schema.get("type")
+    valid = {
+        "object": lambda v: isinstance(v, dict),
+        "array": lambda v: isinstance(v, list),
+        "string": lambda v: isinstance(v, str),
+        "boolean": lambda v: type(v) is bool,
+        "integer": lambda v: type(v) is int,
+        "number": lambda v: type(v) in (int, float) and (type(v) is int or math.isfinite(v)),
+    }
+    if expected in valid and not valid[expected](value):
+        raise ValueError(f"{path} must be {expected}")
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValueError(f"{path} has an unsupported value")
+    if type(value) in (int, float):
+        if "minimum" in schema and value < schema["minimum"]:
+            raise ValueError(f"{path} is below its minimum")
+        if "maximum" in schema and value > schema["maximum"]:
+            raise ValueError(f"{path} is above its maximum")
+    if isinstance(value, dict):
+        properties = schema.get("properties", {})
+        missing = set(schema.get("required", ())) - set(value)
+        if missing:
+            raise ValueError(f"{path} is missing required fields")
+        if schema.get("additionalProperties") is False and set(value) - set(properties):
+            raise ValueError(f"{path} has unexpected fields")
+        for key, child in value.items():
+            if key in properties:
+                _validate_schema(child, properties[key], f"{path}.{key}")
+    elif isinstance(value, list) and "items" in schema:
+        for index, child in enumerate(value):
+            _validate_schema(child, schema["items"], f"{path}[{index}]")
+
+
 def handle(message):
+    if not isinstance(message, dict):
+        raise ValueError("JSON-RPC message must be an object")
     method = message.get("method")
-    params = message.get("params") or {}
+    params = message.get("params", {})
+    if params is None:
+        params = {}
+    if not isinstance(params, dict):
+        raise ValueError("Request params must be an object")
     if method == "initialize":
         return {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "personal-assistant", "version": "1.1.0"}, 'instructions':SERVER_INSTRUCTIONS}
     if method == "ping":
@@ -77,11 +118,8 @@ def handle(message):
         spec = next((t for t in TOOLS if t["name"] == name), None)
         if spec is None:
             raise ValueError("Unknown tool")
-        arguments = params.get("arguments") or {}
-        if set(arguments) - set(spec["inputSchema"]["properties"]):
-            raise ValueError("Unexpected tool argument")
-        if set(spec["inputSchema"]["required"]) - set(arguments):
-            raise ValueError("Missing required tool argument")
+        arguments = params.get("arguments", {})
+        _validate_schema(arguments, spec["inputSchema"])
         try:
             if name == 'research_submit' and Path('/var/lib/personal-agent/.hermes/ESTOP').exists():
                 raise ValueError('New work is paused')
@@ -101,6 +139,8 @@ def main():
             if len(raw) > 1_000_000:
                 raise ValueError("Message too large")
             message = json.loads(raw)
+            if not isinstance(message, dict):
+                raise ValueError("JSON-RPC message must be an object")
             identifier = message.get("id")
             if identifier is None:
                 continue

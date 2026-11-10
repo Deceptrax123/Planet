@@ -24,6 +24,8 @@ def main():
         subprocess.run(hermes + [action], cwd=user.pw_dir, check=True)
         if ji_an:subprocess.run(hermes+['--profile','ji-an',action],cwd=user.pw_dir,check=True)
     elif action == "stop":
+        stopped=Path("/var/lib/personal-agent-maintenance/OWNER_STOPPED")
+        if stopped.parent.exists():stopped.write_text("Stopped by owner\n")
         subprocess.run(["systemctl", "stop", "personal-agent-gateway", "personal-agent-reminders", "personal-agent-research"]+(['personal-agent-ji-an'] if ji_an else []), check=True)
         result = subprocess.run(base + ["systemctl", "--user", "list-units", "--type=scope", "--no-legend", "--plain", "hermes-worker-kanban-*", "hermes-worker-cron-*"], capture_output=True, text=True, check=True)
         scopes = [line.split()[0] for line in result.stdout.splitlines() if line.split() and re.fullmatch(r"hermes-worker-(?:kanban|cron)-[A-Za-z0-9_.@\\:-]+\.scope", line.split()[0])]
@@ -31,9 +33,10 @@ def main():
             subprocess.run(base + ["systemctl", "--user", "stop", *scopes], check=True)
         print("Gateway, reminder sends, managed workers and new research dispatch stopped. Monitor remains available. Remote jobs keep running until individually cancelled.")
     elif action == "start":
+        Path("/var/lib/personal-agent-maintenance/OWNER_STOPPED").unlink(missing_ok=True)
         subprocess.run(["systemctl", "start", "personal-agent-gateway", "personal-agent-reminders", "personal-agent-monitor", "personal-agent-research"]+(['personal-agent-ji-an'] if ji_an else []), check=True)
     elif action == "status":
-        subprocess.run(["/usr/bin/python3", "/opt/personal-agents/app/monitor.py"], check=True)
+        subprocess.run(base + ["/usr/bin/python3", "/opt/personal-agents/app/monitor.py"], cwd=user.pw_dir, check=True)
     elif action == "monitor-password":
         if not sys.stdout.isatty():
             raise SystemExit("Display the dashboard password in your interactive server terminal.")

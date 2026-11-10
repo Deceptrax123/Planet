@@ -115,6 +115,8 @@ class Store:
                  tags=None, confidence=0.8, importance="normal", fact_key=None,
                  valid_from=None, valid_until=None, review_after=None,
                  supersedes=None, timezone_name="Asia/Kolkata", recurrence=None):
+        if type(confirmed) is not bool:
+            raise ValueError("confirmed must be a boolean.")
         if topic.split("/")[0] not in TOPICS:
             raise ValueError("Unknown topic; choose " + ", ".join(sorted(TOPICS)))
         if not 1 <= len(text.strip()) <= 4000 or not 1 <= len(source.strip()) <= 1500:
@@ -244,6 +246,8 @@ class Store:
 
     def add_reminder(self, text, due_at, source, idempotency_key, timezone_name="Asia/Kolkata", repeat="none", allow_quiet=False,
                      event_provider=None, event_calendar=None, event_id=None, event_start=None, offset_minutes=None, delivery_channel='discord'):
+        if type(allow_quiet) is not bool:
+            raise ValueError('allow_quiet must be a boolean.')
         if delivery_channel not in {'discord','whatsapp'}:
             raise ValueError('Choose discord or whatsapp for delivery_channel.')
         due = instant(due_at)

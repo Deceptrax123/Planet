@@ -29,3 +29,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Hermes and Node.js are referenced as external dependencies and are not redistributed in this repository. Their own distributions carry their applicable licenses.
+
+
+The selected WhatsApp bridge source/tests under whatsapp-bridge/ derive from NousResearch/hermes-agent at the pinned upstream commit. Its MIT copyright/license is preserved in whatsapp-bridge/LICENSE.txt. No vendored Hermes Python runtime or npm dependencies are included.

@@ -1,0 +1,26 @@
+[Unit]
+Description=Scoped assistant self-maintenance and deployment broker
+After=network.target personal-agent-data.service
+[Service]
+Type=simple
+User=root
+Group=personal-agent
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -I /opt/personal-agents/maintenance/service.py
+WorkingDirectory=/opt/personal-agents/maintenance
+RuntimeDirectory=personal-agent-maintenance
+RuntimeDirectoryMode=0750
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/personal-agent-maintenance /opt/personal-agents/app /opt/personal-agents/mission-control /opt/personal-agents/whatsapp-bridge
+MemoryMax=384M
+TasksMax=64
+TimeoutStopSec=210
+[Install]
+WantedBy=multi-user.target

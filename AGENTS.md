@@ -6,3 +6,5 @@
 - Preserve owner-only messaging, separate service identities, strict SSH host verification, stable task IDs, cancellation checks and ambiguous-send handling.
 - Use `python3 -m unittest discover -s tests -q` and `node --test tests/whatsapp-pairing-compat.test.mjs` for source changes. Do not run deployment scripts or live messaging/cloud checks as routine tests.
 - Runtime source is not auto-deployed from this repository. Do not overwrite live authentication/configuration or change services without an authorized implementation task.
+
+- Owner authorizes autonomous application self-maintenance. Read SELF-MAINTENANCE.md and use the scoped maintenance MCP. Do not read /root or ask the owner for sudo to edit/deploy supported application files. Root policy and credentials remain protected.
