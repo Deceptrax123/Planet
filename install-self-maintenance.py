@@ -34,7 +34,7 @@ def main():
     for name in ['install-self-maintenance.py','SELF-MAINTENANCE.md','self-maintenance-policy.txt']:
         shutil.copy2(SOURCE/name,WORK/name)
     # The bridge is pinned source only. No npm dependencies, QR state or session files.
-    bridge=WORK/'whatsapp-bridge';bridge.mkdir()
+    bridge=WORK/'whatsapp-bridge';bridge.mkdir(exist_ok=True)
     for path in (PREFIX/'whatsapp-bridge').iterdir():
         if path.is_file() and path.suffix in {'.js','.mjs','.json'}:shutil.copy2(path,bridge/path.name)
     for path in [WORK,*WORK.rglob('*')]:owned(path,agent.pw_uid,agent.pw_gid,0o700 if path.is_dir() else 0o600)
