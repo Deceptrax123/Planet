@@ -1,0 +1,14 @@
+{
+  "hermes": {
+    "repository": "https://github.com/NousResearch/hermes-agent",
+    "version": "0.23.0",
+    "commit": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
+    "vendored": false
+  },
+  "whatsapp_bridge": {
+    "source": "Hermes scripts/whatsapp-bridge at the pinned commit",
+    "baileys_version": "7.0.0-rc13",
+    "pairing_backport_pr": "https://github.com/WhiskeySockets/Baileys/pull/2765",
+    "pairing_backport_head": "042fe1f3ddacf63ac2288837fbc8a395556bbb6e"
+  }
+}

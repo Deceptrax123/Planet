@@ -1,0 +1,25 @@
+[Unit]
+Description=Personal assistant deterministic Discord reminders
+After=network-online.target personal-agent-data.service
+Requires=personal-agent-data.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=personal-agent-data
+Group=personal-agent-data
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/reminder_scheduler.py
+LoadCredential=discord_token:/etc/personal-agents/discord.token
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/personal-agent-data
+MemoryMax=128M
+TasksMax=16
+
+[Install]
+WantedBy=multi-user.target

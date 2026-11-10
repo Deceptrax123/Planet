@@ -1,0 +1,36 @@
+[Unit]
+After=network-online.target personal-agent-data.service
+Wants=network-online.target
+Requires=personal-agent-data.service
+
+[Service]
+Type=simple
+User=personal-agent
+Group=personal-agent
+WorkingDirectory=/var/lib/personal-agent/workspaces
+Environment=HOME=/var/lib/personal-agent
+Environment=CODEX_HOME=/var/lib/personal-agent/codex
+Environment=HERMES_HOME=/var/lib/personal-agent/.hermes
+Environment=PATH=/var/lib/personal-agent/.local/bin:/opt/personal-agents/bin:/usr/local/bin:/usr/bin:/bin
+Environment=XDG_RUNTIME_DIR=/run/user/999
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/999/bus
+Environment=TZ=Asia/Kolkata
+Environment=LANG=C.UTF-8
+LoadCredential=discord_token:/etc/personal-agents/discord.token
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=90
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/personal-agent /run/user/999
+MemoryMax=5G
+TasksMax=256
+LimitNOFILE=4096
+
+ExecStart=/usr/bin/python3 /opt/personal-agents/launch.py serve --host 127.0.0.1 --port 9119 --skip-build
+
+[Install]
+WantedBy=multi-user.target

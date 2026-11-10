@@ -1,0 +1,30 @@
+[Unit]
+Description=Ji Eun isolated GCP research SSH broker
+After=network-online.target personal-agent-data.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=personal-agent-research
+Group=personal-agent
+SupplementaryGroups=personal-agent-research
+Environment=HOME=/var/lib/personal-agent-research
+Environment=CLOUDSDK_CONFIG=/var/lib/personal-agent-research/.config/gcloud
+Environment=CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=1
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/research_broker.py
+RuntimeDirectory=personal-agent-research
+RuntimeDirectoryMode=0750
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+InaccessiblePaths=/root /home /var/lib/personal-agent/codex
+ReadWritePaths=/var/lib/personal-agent-research
+MemoryMax=768M
+TasksMax=48
+
+[Install]
+WantedBy=multi-user.target

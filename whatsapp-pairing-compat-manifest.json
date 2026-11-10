@@ -1,0 +1,13 @@
+{
+  "source": "https://github.com/WhiskeySockets/Baileys/pull/2765",
+  "upstream_head": "042fe1f3ddacf63ac2288837fbc8a395556bbb6e",
+  "base_version": "7.0.0-rc13",
+  "original_sha256": {
+    "Socket/socket.js": "ab9b68888e123ad683dbc26555fc928400c1526c93ec6b66853f2ba30f8177a9",
+    "Socket/messages-recv.js": "850445e6f9e076b1beb98034cbc5cf79562dfda26a44f5a874a84e3609bfd710"
+  },
+  "patched_sha256": {
+    "Socket/socket.js": "4bbb90bb6a4d6eb969a1ad7f162810ecf2a40a1e61e30b6b1edb5d81e99de68c",
+    "Socket/messages-recv.js": "c8ae3d8135be97e9b76b88bde909666886b99dd74e2fb789e39e86a47667fd40"
+  }
+}

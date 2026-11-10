@@ -1,0 +1,10 @@
+name: personal-context
+version: 1.0.0
+description: Automatic topic/time memory retrieval and owner-visible task telemetry.
+author: local-owner
+provides_hooks:
+  - pre_llm_call
+  - post_llm_call
+  - transform_llm_output
+  - post_tool_call
+  - on_session_end

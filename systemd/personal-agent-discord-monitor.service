@@ -1,0 +1,23 @@
+[Unit]
+Description=Ji Eun Discord activity and health channels
+After=network-online.target personal-agent-data.service
+Wants=network-online.target
+[Service]
+User=personal-agent
+Group=personal-agent
+Environment=HOME=/var/lib/personal-agent
+LoadCredential=discord_token:/etc/personal-agents/discord.token
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/discord_monitor.py
+WorkingDirectory=/opt/personal-agents/app
+Restart=on-failure
+RestartSec=15
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/personal-agent/.config
+MemoryMax=256M
+TasksMax=32
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Sync credential-free personal memory snapshots
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/shared_sync.py
+UMask=0077

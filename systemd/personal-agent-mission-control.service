@@ -1,0 +1,25 @@
+[Unit]
+Description=Ji Eun private live agent mission control
+After=personal-agent-data.service
+[Service]
+Type=simple
+User=personal-agent
+Group=personal-agent
+Environment=HOME=/var/lib/personal-agent
+Environment=CODEX_HOME=/var/lib/personal-agent/codex
+Environment=PATH=/var/lib/personal-agent/.local/bin:/opt/personal-agents/bin:/usr/bin:/bin
+LoadCredential=monitor_password:/etc/personal-agents/monitor.password
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/mission_control.py
+WorkingDirectory=/opt/personal-agents/app
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ReadWritePaths=/var/lib/personal-agent
+MemoryMax=384M
+TasksMax=64
+[Install]
+WantedBy=multi-user.target

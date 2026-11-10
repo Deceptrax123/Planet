@@ -1,0 +1,7 @@
+[Unit]
+Description=Encrypted personal assistant data backup and isolated restore check
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/backup.py
+UMask=0077
+Nice=10

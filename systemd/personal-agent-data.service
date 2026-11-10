@@ -1,0 +1,26 @@
+[Unit]
+Description=Personal assistant structured memory MCP backend
+After=local-fs.target
+
+[Service]
+Type=simple
+User=personal-agent-data
+Group=personal-agent
+SupplementaryGroups=personal-agent-data
+ExecStart=/usr/bin/python3 /opt/personal-agents/app/assistant_broker.py --shared /var/lib/personal-agent-data/shared-snapshot
+RuntimeDirectory=personal-agent-data
+RuntimeDirectoryMode=0750
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/personal-agent-data
+ReadOnlyPaths=/var/lib/personal-agent-data/shared-snapshot
+MemoryMax=256M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target
