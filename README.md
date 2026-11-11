@@ -1,4 +1,4 @@
-# Scientific Assistants
+# Planet
 
 I use this to give agents personal work and research tasks through chat, then follow what they actually do.
 
