@@ -165,3 +165,8 @@ The owner completed QR linking, verified to match the number entered privately. 
 
 
 Model preference — confirmed 2026-11-10 India time: Ji Eun may use Luna/Terra; her main default is `gpt-6-luna` and the everyday role is `gpt-6.1-terra`. Ji An’s main conversation and scientific interpretation must use `gpt-6.1-sol`, including her separate Discord profile and native Codex role. Existing live defaults and recent native/session metadata were verified to match. No silent downgrade or paid API fallback is configured.
+
+
+## Application self-maintenance (2026-11-11)
+
+The owner authorized Ji Eun and Ji An to inspect, fix and extend their code. The scoped maintenance MCP, immutable candidate checks, peer review, transactional deploy/rollback and recovery are installed. See [SELF-MAINTENANCE.md](../SELF-MAINTENANCE.md). The private mission-control dashboard includes candidate logs and release state. Owner full stop writes a root-controlled marker respected by maintenance. General sudo, credentials, service policy and root-run scripts remain outside application self-deployment. The latency proposal remains unapproved.
