@@ -1,6 +1,6 @@
 # Planet
 
-I use this to give agents personal work and research tasks through chat, then follow what they actually do.
+I use this to give agents personal work and research tasks through chat, then follow what they actually do. I started as a weeknd project and now i would like to see what the the limit to automation like can these agents just write better code for themselves :) 
 
 The project runs **Ji Eun** and **Ji An** on a Linux server through [Hermes Agent](https://github.com/NousResearch/hermes-agent) and the Codex app-server harness. Ji Eun handles conversation, email, scheduling and everyday work. Ji An handles scientific interpretation, experiment analysis and methodological review. They share structured memory and a task board. They can write code, delegate work to swarms, connect to configured research servers over SSH, and run requested experiments.
 
