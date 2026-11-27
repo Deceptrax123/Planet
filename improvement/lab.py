@@ -16,6 +16,7 @@ import urllib.request
 import urllib.parse
 
 from protocol import request as maintenance
+from daily_report import ZONE, summarize_day
 
 PLANET = 'https://github.com/Deceptrax123/Planet'
 SSH_ORIGIN = 'git@github.com:Deceptrax123/Planet.git'
@@ -60,6 +61,10 @@ DECISION = {
     'experiment': {'type': 'string', 'enum': ['repair', 'harness']},
     'next_focus': {'type': 'string'},
     'compare_models': {'type': 'array', 'items': {'type': 'string'}},
+    'assessments': {'type': 'array', 'items': {'type': 'object', 'properties': {
+        'actor': {'type': 'string'}, 'disposition': {'type': 'string',
+            'enum': ['selected', 'combined', 'deferred', 'rejected']}, 'reason': {'type': 'string'},
+    }, 'required': ['actor', 'disposition', 'reason'], 'additionalProperties': False}},
 }
 PATCH = {
     'title': {'type': 'string'},
@@ -75,7 +80,16 @@ SECRET = re.compile(
 )
 TOKEN = re.compile(r'^[0-9a-f-]{36}$')
 FOCUS = re.compile(r'^(?:app|tests|maintenance|mission-control|whatsapp-bridge|improvement)/[a-zA-Z0-9_.-]+\.(?:py|mjs|js|html|css)$')
-TRIAL_MODELS = {'gpt-6-luna', 'gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6.2-sol', 'gpt-6.2-astra'}
+CODEX_PROVIDER = 'openai-codex'
+TEAM = {
+    'model': {'type': 'string'},
+    'provider': {'type': 'string'},
+    'teammates': {'type': 'array', 'items': {'type': 'object', 'properties': {
+        'role': {'type': 'string'}, 'brief': {'type': 'string'},
+        'model': {'type': 'string'}, 'provider': {'type': 'string'},
+        'implement': {'type': 'boolean'},
+    }, 'required': ['role', 'brief', 'model', 'provider', 'implement'], 'additionalProperties': False}},
+}
 ROUTING_CASES = {
     'ordinary': ('Summarize a supplied markdown note in three bullets.', 'coordination'),
     'method': ('Interpret uncertainty and sample size in a completed experiment.', 'science'),
@@ -128,6 +142,17 @@ def verify_output(properties, value):
         if type(value[name]) is not expected:
             raise ModelError('Unexpected structured response field')
     return value
+
+
+def codex_models():
+    catalog = Path(os.environ.get('CODEX_HOME', str(Path.home() / 'codex'))) / 'models_cache.json'
+    try:
+        items = json.loads(catalog.read_text()).get('models', [])
+        models = {item['slug'] for item in items if item.get('visibility') == 'list' and item.get('slug')}
+    except (OSError, ValueError):
+        models = set()
+    return models | {model for model, _ in ROLES.values()}
+
 
 
 def call_model(actor, model, prompt, properties, sandbox_dir):
@@ -268,8 +293,13 @@ class Lab:
         revision = time.time_ns() // 1000
         while len(json.dumps(runs, ensure_ascii=False).encode()) > 570_000:
             runs.pop()
-        payload = json.dumps({'runs': runs, 'revision': revision, 'intervalHours': INTERVAL_HOURS},
-                             ensure_ascii=False).encode()
+        day = datetime.now(ZONE).date()
+        daily = summarize_day(runs, day, False)
+        payload = json.dumps({'runs': runs, 'revision': revision, 'intervalHours': INTERVAL_HOURS,
+                              'daily': daily}, ensure_ascii=False).encode()
+        if len(payload) > 600_000:
+            payload = json.dumps({'runs': runs, 'revision': revision, 'intervalHours': INTERVAL_HOURS},
+                                 ensure_ascii=False).encode()
         auth = {'OAI-Sites-Authorization': 'Bearer ' + self.secret.read_text().strip()}
         try:
             update = urllib.request.Request(self.site + '/api/lab', payload,
@@ -289,9 +319,10 @@ class Lab:
         if mirror:
             self.mirror()
 
-    def event(self, run, kind, title, body='', actor='Lab', model='', url=''):
+    def event(self, run, kind, title, body='', actor='Lab', model='', url='', **details):
         run['events'].append({'at': now(), 'kind': kind, 'title': clean(title, 180),
-                              'body': clean(body), 'actor': actor, 'model': model, 'url': url})
+                              'body': clean(body), 'actor': actor, 'model': model, 'url': url,
+                              'provider': CODEX_PROVIDER if model else '', **details})
         self.save(run)
         print(f'{run["id"]} {kind}: {clean(title, 180)}', flush=True)
 
@@ -366,10 +397,12 @@ class Lab:
                 update_record = True
             candidate_id = previous.get('releaseCandidate')
             if candidate_id and not previous.get('releaseState'):
-                release = maintenance('status', {'candidate_id': candidate_id})['state']
+                status = maintenance('status', {'candidate_id': candidate_id})
+                release = status['state']
                 if release not in {'queued', 'deploying'}:
                     previous['releaseState'] = release
-                    self.event(previous, 'release', 'Release state: ' + release)
+                    self.event(previous, 'release', 'Release state: ' + release,
+                               at=status.get('updated_at', now()))
                     update_record = True
             if update_record:
                 ref = previous.get('outbox') or previous.get('publishedCommit') or previous['base']
@@ -435,6 +468,11 @@ class Lab:
                 run['outcome'] = clean(str(exc) if isinstance(exc, ModelError) else type(exc).__name__, 180)
                 self.event(run, 'check', 'Cycle stopped', run['outcome'])
             finally:
+                if run['state'] in {'rejected', 'failed'}:
+                    disposition = 'deferred' if run.get('decision') == 'deferred' else run['state']
+                    self.event(run, 'outcome', {'rejected': 'Idea rejected', 'failed': 'Cycle failed',
+                               'deferred': 'Idea deferred'}[disposition],
+                               run['outcome'], disposition=disposition)
                 self.git_record(run, checkout, 'Record improvement cycle outcome')
                 if self.push(run):
                     run['outbox'] = ''
@@ -469,9 +507,10 @@ class Lab:
                  f'Recent outcomes: {json.dumps(previous)}\n'
                  f'Project path index:\n{index}\nPublic source under review:\n'
                  f'{original[:24_000]}')
-        proposals = self.debate(run, brief, {}, 'proposal', temp)
-        critiques = self.debate(run, brief, proposals, 'critique', temp)
-        model, _, decision = self.contribution('Ji Eun', ROLES['Ji Eun'][0], brief + '\n\nProposals and counterarguments:\n'
+        team, engineer = self.plan_team(run, brief, temp)
+        proposals = self.debate(run, brief, team, {}, 'proposal', temp)
+        critiques = self.debate(run, brief, team, proposals, 'critique', temp)
+        model, _, decision = self.contribution('Ji Eun', team['Ji Eun'][0], brief + '\n\nProposals and counterarguments:\n'
                                  + json.dumps([proposals, critiques], ensure_ascii=False)
                                  + '\nThe proposals and critiques above are the CURRENT seats. '
                                  'The brief also contains older outcomes, which do not affect attendance. '
@@ -480,12 +519,28 @@ class Lab:
                                  'permission to try in isolation, never evidence or approval to deploy. '
                                  'Choose experiment=repair for a behavior defect and experiment=harness '
                                  'for a test that should detect an intentionally broken control. '
+                                 'Assess each proposal by its exact actor name and explain why it was '
+                                 'selected, combined with another, deferred, or rejected. '
                                  'Give any next_focus as a path in the public index, otherwise empty. '
                                  'If a model-routing experiment helps, choose two or three models from '
-                                 f'{sorted(TRIAL_MODELS)} in compare_models, otherwise return an empty list.',
+                                 f'{sorted(codex_models())} in compare_models, otherwise return an empty list.',
                                  DECISION, temp)
         run['nextFocus'] = clean(decision['next_focus'], 200)
-        self.event(run, 'decision', decision['title'], self.explain(decision), 'Ji Eun', model)
+        run['decision'] = 'advanced' if decision['proceed'] else 'deferred'
+        self.event(run, 'decision', decision['title'], self.explain(decision), 'Ji Eun', model,
+                   disposition=run['decision'])
+        assessed = set()
+        for item in decision['assessments']:
+            if not isinstance(item, dict):
+                continue
+            author, disposition, reason = (item.get(key) for key in ('actor', 'disposition', 'reason'))
+            if (not all(isinstance(value, str) for value in (author, disposition, reason))
+                    or author not in proposals or author in assessed
+                    or disposition not in {'selected', 'combined', 'deferred', 'rejected'}):
+                continue
+            assessed.add(author)
+            self.event(run, 'idea', proposals[author]['title'], reason, 'Ji Eun', model,
+                       disposition=disposition, author=author)
         self.git_record(run, checkout, 'Record improvement debate')
         if self.push(run):
             self.event(run, 'github', 'Debate recorded on Planet', url=run['github'])
@@ -498,7 +553,7 @@ class Lab:
         regression = 'tests/test_lab_' + run['id'].lower().replace('t','_').replace('z','') + '.py'
         if len(original) > 24_000:
             brief += '\nFor a large file, select an issue in the supplied source excerpt.'
-        engineering_model = ROLES['Engineering teammate'][0]
+        engineering_model = team[engineer][0]
         harness = decision['experiment'] == 'harness'
         experiment_contract = (
             'Your edits are an intentional defect used only as the failed control. '
@@ -513,7 +568,7 @@ class Lab:
                         'Copy anchors verbatim including whitespace. Return raw Python test source without markdown fences. '
                         + experiment_contract)
         for attempt in range(2):
-            engineering_model, _, proposal = self.contribution('Engineering teammate', engineering_model,
+            engineering_model, _, proposal = self.contribution(engineer, engineering_model,
                                                                  patch_prompt, PATCH, temp)
             try:
                 code, test = candidate_source(original, proposal, regression)
@@ -564,7 +619,7 @@ class Lab:
         files[target] = original if harness else code
         candidate = check(files, 'Debated candidate for ' + run['topic'], sha)
         self.event(run, 'candidate', proposal['title'], 'Isolated candidate ' + candidate['id'],
-                   'Engineering teammate', engineering_model, PLANET + '/commit/' + sha)
+                   engineer, engineering_model, PLANET + '/commit/' + sha)
         self.event(run, 'check', 'Candidate regression suite ' + ('passed' if candidate['test_passed'] else 'failed'),
                    safe_test_report(candidate))
         if not expected_failure or not candidate['test_passed']:
@@ -589,7 +644,8 @@ class Lab:
                                    'model': model, 'thread_id': thread,
                                    'verdict': 'approve' if approved else 'request_changes', 'notes': note})
             approvals.append(approved)
-            self.event(run, 'review', 'Approved' if approved else 'Requested changes', note, actor, model)
+            self.event(run, 'review', 'Approved' if approved else 'Requested changes', note, actor, model,
+                       verdict='approve' if approved else 'request_changes')
         if not all(approvals):
             run['state'] = 'rejected'
             run['outcome'] = 'A reviewer requested changes after the candidate passed its tests.'
@@ -629,8 +685,9 @@ class Lab:
                        'The maintenance broker could not queue this release.')
 
     def run_model_trial(self, run, selected, temp):
+        catalog = codex_models()
         models = list(dict.fromkeys(model for model in selected if isinstance(model, str)
-                                    and model in TRIAL_MODELS))[:3]
+                                    and model in catalog))[:3]
         if len(models) < 2:
             return
         categories = ['coordination', 'science', 'engineering']
@@ -657,7 +714,7 @@ class Lab:
             thread, answer = call_model(actor, model, prompt, schema, temp)
             return model, thread, answer
         except ModelError:
-            retry_model = 'gpt-6.1-terra' if actor == 'Ji Eun' else model
+            retry_model = 'gpt-6.1-terra' if actor == 'Ji Eun' and model == ROLES['Ji Eun'][0] else model
             thread, answer = call_model(actor, retry_model, prompt, schema, temp)
             return retry_model, thread, answer
 
@@ -665,7 +722,50 @@ class Lab:
     def explain(value):
         return '\n'.join(clean(value[key], 780) for key in ('position', 'test', 'risk') if value[key])
 
-    def debate(self, run, brief, proposals, phase, temp):
+    def plan_team(self, run, brief, temp):
+        catalog = codex_models()
+        team = {actor: ROLES[actor] for actor in ('Ji Eun', 'Ji An')}
+        engineer = None
+        for lead in ('Ji Eun', 'Ji An'):
+            default, focus = ROLES[lead]
+            try:
+                used, _, choice = self.contribution(lead, default, brief +
+                    f'\nPick the model for your own debate seat and recruit the teammates you need. '
+                    f'Connected provider and models: {CODEX_PROVIDER} {sorted(catalog)}. '
+                    'Use short, distinct role names. Mark an optional implementation lead. '
+                    'Choose only distinct roles useful for the task and account for the run time limit.',
+                    TEAM, temp)
+            except ModelError as exc:
+                self.event(run, 'check', 'Team selection unavailable', str(exc), lead, default)
+                continue
+            if choice['provider'] == CODEX_PROVIDER and choice['model'] in catalog:
+                team[lead] = (choice['model'], focus)
+            roles = []
+            for teammate in choice['teammates']:
+                if not isinstance(teammate, dict):
+                    continue
+                raw_role = teammate.get('role')
+                if not isinstance(raw_role, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 &/+-]{1,47}", raw_role):
+                    continue
+                role = raw_role.strip()
+                model = teammate.get('model')
+                if (role.casefold() in {name.casefold() for name in team}
+                        or not isinstance(model, str) or model not in catalog
+                        or teammate.get('provider') != CODEX_PROVIDER or not isinstance(teammate.get('brief'), str)):
+                    continue
+                team[role] = (model, clean(teammate['brief'], 420))
+                roles.append(f'{role} · {model}')
+                if engineer is None and teammate.get('implement') is True:
+                    engineer = role
+            self.event(run, 'team', 'Selected teammates and models',
+                       f"Lead seat: {team[lead][0]}\n" + '\n'.join(roles), lead, used)
+        if engineer is None:
+            engineer = next((actor for actor in team if actor not in {'Ji Eun', 'Ji An'}), 'Engineering teammate')
+            if engineer not in team:
+                team[engineer] = ROLES[engineer]
+        return team, engineer
+
+    def debate(self, run, brief, team, proposals, phase, temp):
         instructions = (
             '\nPropose one concrete change and say what would falsify it.' if phase == 'proposal' else
             '\nCritique the other proposals. Identify weak evidence, alternatives, and a decisive test. '
@@ -674,7 +774,7 @@ class Lab:
         results = {}
         # Fresh sessions receive the same inputs. Running them in sequence avoids
         # competing with active assistant conversations for simultaneous requests.
-        for actor, (model, lens) in ROLES.items():
+        for actor, (model, lens) in team.items():
             try:
                 returned_model, _, value = self.contribution(actor, model,
                                                               brief + '\n' + lens + instructions,

@@ -8,6 +8,9 @@
 <style>
 :root{color-scheme:dark;--bg:#10131a;--panel:#171c25;--line:#2b3342;--text:#edf1fa;--muted:#aeb9cc;--teal:#7fe5c6;--lilac:#c5b7ff;--amber:#ffcf93;font-family:system-ui,sans-serif}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:radial-gradient(ellipse at 82% 0%,#212039 0%,transparent 42%),var(--bg);color:var(--text);min-height:100vh}a{color:var(--teal);text-underline-offset:4px}button{font:inherit;color:inherit}button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--teal);outline-offset:3px}.wrap{max-width:1220px;margin:auto;padding:0 clamp(20px,5vw,70px)}header{border-bottom:1px solid var(--line)}.top{display:flex;align-items:center;justify-content:space-between;min-height:70px;gap:12px}.brand{font-weight:700;letter-spacing:.02em}.orb{color:var(--teal);margin-right:10px}.top a{font-size:.88rem}.hero{padding:clamp(34px,6vw,76px) 0 28px}.hero h1{font-size:clamp(2.6rem,7vw,5.3rem);letter-spacing:-.065em;line-height:.99;margin:12px 0 16px;font-weight:650}.hero p{color:var(--muted);margin:0;line-height:1.55}.status{display:inline-flex;gap:8px;align-items:center;color:var(--teal);font-size:.88rem}.status::before{content:'';background:currentColor;width:7px;height:7px;border-radius:50%}.status[data-stale=true]{color:var(--amber)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:32px}.stats div{background:var(--panel);padding:16px 20px}.stats strong{display:block;font-size:1.7rem;font-weight:640}.stats span,.muted{color:var(--muted)}.stats span{font-size:.88rem}.layout{display:grid;grid-template-columns:minmax(245px,1fr) minmax(0,2.5fr);gap:26px;padding-bottom:52px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:14px;overflow:hidden}.section{padding:18px 20px}.section h2,.record h2{font-size:1rem;margin:0 0 14px}.runs{display:grid;gap:8px}.run{width:100%;text-align:left;background:#1c2330;border:1px solid transparent;border-radius:8px;padding:11px;cursor:pointer;line-height:1.35}.run[aria-pressed=true]{border-color:var(--teal);background:#20302f}.run small{display:block;margin-top:5px;color:var(--muted)}.chart{display:flex;gap:7px;align-items:flex-end;height:32px;margin-bottom:18px}.bar{flex:1;background:var(--lilac);border-radius:3px;min-width:5px;max-width:20px}.bar[data-state=failed],.bar[data-state=rejected]{background:var(--amber)}.bar[data-state=complete]{background:var(--teal)}.record{padding:clamp(17px,3vw,32px)}.record h3{font-size:clamp(1.45rem,3.5vw,2.25rem);margin:0 0 10px;line-height:1.15;letter-spacing:-.035em}.record p,.entry p{line-height:1.55;overflow-wrap:anywhere}.filters{display:flex;flex-wrap:wrap;gap:7px;border-block:1px solid var(--line);padding:12px 0;margin:23px 0 8px}.filters button{background:transparent;border:1px solid var(--line);padding:5px 10px;border-radius:6px;font-size:.88rem;cursor:pointer}.filters button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#14221f}.entry{padding:12px 0;border-bottom:1px solid var(--line)}.entry:last-child{border-bottom:0}.entry summary{cursor:pointer;line-height:1.5;overflow-wrap:anywhere}.entry summary::marker{color:var(--teal)}.kind{font-size:.82rem;color:var(--lilac);margin-left:7px}.metadata{font-size:.82rem;color:var(--muted);margin:3px 0 0 15px}.entry p{white-space:pre-wrap;margin:9px 0 7px 15px}.entry a{font-size:.87rem;margin-left:15px}.empty{color:var(--muted);padding:12px 0}.record .link{margin-right:12px;display:inline-block}footer{border-top:1px solid var(--line);padding:18px 0;font-size:.88rem;color:var(--muted)}@media(max-width:720px){.layout{grid-template-columns:1fr;gap:16px}.stats div{padding:11px}.stats span{font-size:.8rem}}
+/* Daily recap */
+.recap{padding:clamp(18px,3vw,32px);margin-bottom:26px}.recap-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:14px;margin-bottom:18px}.recap-head h2{font-size:clamp(1.45rem,3vw,2.15rem);letter-spacing:-.045em;margin:0 0 5px}.recap-head p{margin:0}.recap-head label{display:grid;gap:5px;font-size:.875rem;color:var(--muted)}.recap-head input{background:#1c2330;color:var(--text);border:1px solid var(--line);border-radius:7px;font:inherit;padding:7px 9px}.recap-head input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}.recap-metrics{display:flex;flex-wrap:wrap;gap:8px 20px;padding:11px 0 15px;border-block:1px solid var(--line);font-size:.9rem;color:var(--muted)}.recap-metrics b{color:var(--text);font-size:1.12rem;margin-right:4px}.recap-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:28px;padding:17px 0}.recap h3{font-size:1.05rem;margin:0 0 9px}.recap p{line-height:1.5}.legend{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:7px 12px;font-size:.8rem;color:var(--muted);margin:0 0 12px}.legend li{display:flex;align-items:center;gap:5px}.key,.segment{background:var(--part)}.key{width:9px;height:9px;border-radius:2px}.agent-row{display:grid;grid-template-columns:minmax(8rem,1fr) minmax(7rem,1.5fr) 2rem;gap:8px;align-items:center;font-size:.9rem;margin-bottom:10px}.agent-row small{display:block;color:var(--muted);margin-top:2px;font-size:.78rem}.agent-row strong{text-align:right}.track{height:12px;border-radius:4px;background:#202735;display:flex;overflow:hidden;align-items:stretch}.segment{display:block;min-width:0}.recap-teams{padding:0;list-style:none;margin:0}.recap-teams li{padding:5px 0;font-size:.9rem;line-height:1.45}.recap-teams b{display:block;color:var(--muted);font-size:.82rem;font-weight:400}.recap-work{border-top:1px solid var(--line);padding-top:13px}.recap-run{border-top:1px solid var(--line);padding:9px 0;margin-top:6px}.recap-run:first-of-type{border-top:0}.recap-run summary{cursor:pointer;font-weight:620;line-height:1.5}.recap-run summary::marker{color:var(--teal)}.recap-run h4{margin:15px 0 4px;font-size:.9rem;color:var(--muted);font-weight:540}.recap-run ul{margin:0;padding-left:19px}.recap-run li{padding:4px 0;overflow-wrap:anywhere;line-height:1.48}.recap-run li p{white-space:pre-wrap;font-size:.88rem;color:var(--muted);margin:4px 0 10px}.recap-run .link{display:inline-block;margin-top:8px;font-size:.86rem}.recap-run .muted{font-size:.9rem;margin:4px 0 6px}
+@media(max-width:720px){.recap-grid{grid-template-columns:1fr;gap:15px}.agent-row{grid-template-columns:minmax(7rem,1fr) minmax(5rem,1fr) 1.5rem}}
 </style>
 </head>
 <body>
@@ -22,6 +25,11 @@
 <div><strong id="cycles">–</strong><span>Recent cycles</span></div>
 <div><strong id="debates">–</strong><span>Debate contributions</span></div>
 <div><strong id="verified">–</strong><span>Verified candidates</span></div>
+</section>
+<section class="panel recap" id="daily-recap" aria-labelledby="recap-title">
+<div class="recap-head"><div><h2 id="recap-title">Daily team recap</h2><p id="recap-status" class="muted" role="status">Loading the daily report</p></div>
+<label>Report date<input id="recap-date" type="date"></label></div>
+<div id="recap-body"></div>
 </section>
 <div class="layout">
 <aside class="panel section" aria-label="Run history"><h2>Run history</h2><div id="chart" class="chart" role="img" aria-label="No runs recorded" hidden></div><div id="runs" class="runs"></div></aside>
@@ -129,6 +137,156 @@ function render() {
     $('events').append(entry);
   }
 }
+const india = 'Asia/Kolkata';
+const dayFormat = new Intl.DateTimeFormat('en-GB',{timeZone:india,year:'numeric',month:'2-digit',day:'2-digit'});
+const reportDate = new Intl.DateTimeFormat('en-IN',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'});
+const parts = {team:'#b6cb82',proposal:'#75dcbf',critique:'#b8a7f1',decision:'#f4c48d',candidate:'#87b9fb',review:'#ed9ab9',check:'#9bb4be'};
+const dispositions = {advanced:'Advanced to experiment',deferred:'Deferred',recorded:'Decision recorded',
+  selected:'Selected',combined:'Combined',rejected:'Rejected'};
+const daily = {live:null, date:null, archive:null, manual:false, request:0};
+function indiaDay() {
+  const values = Object.fromEntries(dayFormat.formatToParts().map(part => [part.type,part.value]));
+  return [values.year,values.month,values.day].join('-');
+}
+function drawDaily(report) {
+  if (!report) return;
+  const host = $('recap-body');
+  const expanded = new Set(Array.from(host.querySelectorAll('details[open]'), node => node.dataset.run));
+  host.replaceChildren();
+  $('recap-status').textContent = reportDate.format(new Date(report.day + 'T00:00:00Z')) +
+    ' · ' + (report.closed ? 'Day closed' : 'Day in progress') + ' · India time';
+  if (!report.counts.runs) {
+    host.append(el('p','No lab activity was recorded for this day.','empty'));
+    return;
+  }
+  const metrics = el('div','','recap-metrics');
+  const cells = [['runs','runs'],['agents','agents'],['proposal','proposals'],['critique','critiques'],
+    ['advanced','advanced'],['deferred','deferred'],['rejected','rejected runs'],['idea_rejected','ideas rejected'],['changes','reviews requesting changes'],
+    ['verified','verified'],['deployed','deployed']];
+  for (const [key,label] of cells) {
+    const item = el('span');
+    item.append(el('b',String(report.counts[key] ?? 0)),document.createTextNode(label));
+    metrics.append(item);
+  }
+  const grid = el('div','','recap-grid');
+  const roles = el('section');
+  roles.append(el('h3','What each agent did'));
+  const categories = Object.keys(parts).filter(kind => report.agents.some(agent => agent.counts[kind]));
+  const legend = el('ul','','legend');
+  for (const kind of categories) {
+    const item = el('li');
+    const swatch = el('span','','key');
+    swatch.style.setProperty('--part',parts[kind]);
+    item.append(swatch,document.createTextNode(report.labels[kind]));
+    legend.append(item);
+  }
+  roles.append(legend);
+  const totals = report.agents.map(agent => Object.values(agent.counts).reduce((a,b) => a+b,0));
+  const max = Math.max(1,...totals);
+  report.agents.forEach((agent,index) => {
+    const row = el('div','','agent-row');
+    const name = el('span',agent.name);
+    if (agent.models.length) name.append(el('small',agent.models.join(', ')));
+    const bar = el('div','','track');
+    bar.setAttribute('role','img');
+    bar.setAttribute('aria-label',categories.filter(kind => agent.counts[kind])
+      .map(kind => report.labels[kind] + ' ' + agent.counts[kind]).join(', '));
+    for (const kind of categories) {
+      if (!agent.counts[kind]) continue;
+      const segment = el('span','','segment');
+      segment.style.setProperty('--part',parts[kind]);
+      segment.style.width = agent.counts[kind] / max * 100 + '%';
+      segment.title = report.labels[kind] + ' · ' + agent.counts[kind];
+      bar.append(segment);
+    }
+    row.append(name,bar,el('strong',String(totals[index])));
+    roles.append(row);
+  });
+  if (!totals.length) roles.append(el('p','No agent contributions were recorded.','muted'));
+  const teams = el('section');
+  teams.append(el('h3','Who worked together'));
+  const combinations = el('ul','','recap-teams');
+  for (const team of report.collaborations) {
+    const item = el('li',team.people.join(' + '));
+    item.append(el('b',team.runs + (team.runs === 1 ? ' shared run' : ' shared runs')));
+    combinations.append(item);
+  }
+  if (!report.collaborations.length) teams.append(el('p','No shared runs were recorded.','muted'));
+  teams.append(combinations);
+  grid.append(roles,teams);
+  const work = el('div','','recap-work');
+  work.append(el('h3','Decisions and evidence by run'));
+  for (const item of report.work) {
+    const row = el('details','','recap-run');
+    row.dataset.run = item.id;
+    row.open = expanded.has(item.id);
+    row.append(el('summary',item.topic));
+    if (item.people.length) row.append(el('p',item.people.join(' · '),'muted'));
+    for (const [title, entries] of [['Team choices, proposals and arguments',item.contributions],
+      ['Decisions',item.decisions],['Tests, reviews and outcomes',item.results]]) {
+      if (!entries.length) continue;
+      const list = el('ul');
+      for (const entry of entries) {
+        const line = el('li');
+        const heading = [entry.actor,entry.disposition && dispositions[entry.disposition],
+          entry.author && 'proposal by ' + entry.author,entry.title].filter(Boolean);
+        line.append(el('strong',heading.join(' · ')));
+        if (entry.body) line.append(el('p',entry.body));
+        list.append(line);
+      }
+      row.append(el('h4',title),list);
+    }
+    const link = ghLink(item.github,'Open run on GitHub');
+    if (link) row.append(link);
+    work.append(row);
+  }
+  host.append(metrics,grid,work);
+}
+async function chooseDay(day) {
+  daily.date = day;
+  $('recap-date').value = day;
+  const request = ++daily.request;
+  if (daily.live?.day === day) {
+    daily.archive = null;
+    drawDaily(daily.live);
+    return;
+  }
+  $('recap-status').textContent = 'Loading the daily report';
+  $('recap-body').replaceChildren();
+  try {
+    const response = await fetch('/api/daily?day=' + encodeURIComponent(day));
+    if (request !== daily.request) return;
+    if (response.status === 404) {
+      $('recap-status').textContent = 'No report for this date yet · India time';
+      return;
+    }
+    if (!response.ok) throw Error('Recap unavailable');
+    const report = await response.json();
+    if (request !== daily.request) return;
+    daily.archive = report;
+    drawDaily(report);
+  } catch {
+    if (request === daily.request) $('recap-status').textContent = 'Daily report temporarily unavailable';
+  }
+}
+async function initDaily() {
+  const today = indiaDay();
+  $('recap-date').max = today;
+  try {
+    const response = await fetch('/api/daily');
+    const index = response.ok ? await response.json() : {days:[]};
+    if (daily.manual) return;
+    const latest = index.days.find(item => item.closed);
+    await chooseDay(latest?.day || today);
+  } catch {
+    if (!daily.manual) await chooseDay(today);
+  }
+}
+$('recap-date').onchange = event => {
+  if (!event.target.value) return;
+  daily.manual = true;
+  chooseDay(event.target.value);
+};
 async function refresh() {
   try {
     const response = await fetch('/api/lab', { cache:'no-store' });
@@ -141,6 +299,10 @@ async function refresh() {
     if (state.revision === data.revision) return;
     state.revision = data.revision;
     state.runs = data.runs;
+    if (data.daily) {
+      daily.live = data.daily;
+      if (daily.date === daily.live.day) drawDaily(daily.live);
+    }
     $('cycles').textContent = state.runs.length;
     $('debates').textContent = state.runs.flatMap(item => item.events).filter(groups.Debate).length;
     $('verified').textContent = state.runs.filter(item => item.verified === true).length;
@@ -151,8 +313,10 @@ async function refresh() {
   }
 }
 render();
+initDaily();
 refresh();
 setInterval(refresh,20000);
+setInterval(() => { if (!daily.manual && daily.live?.day !== indiaDay()) initDaily(); },60000);
 </script>
 </body>
 </html>

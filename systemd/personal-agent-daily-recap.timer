@@ -1,0 +1,10 @@
+[Unit]
+Description=Close the Planet improvement lab day at 00:05 India time
+
+[Timer]
+OnCalendar=*-*-* 00:05:00 Asia/Kolkata
+Persistent=true
+Unit=personal-agent-daily-recap.service
+
+[Install]
+WantedBy=timers.target

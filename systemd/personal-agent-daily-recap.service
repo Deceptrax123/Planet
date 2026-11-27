@@ -1,0 +1,27 @@
+[Unit]
+Description=Publish the Planet improvement lab daily recap
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=20min
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+User=personal-agent
+Group=personal-agent
+Environment=HOME=/var/lib/personal-agent
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PLANET_LAB_SITE=https://ji-eun-ji-an-lab.smudge0110.chatgpt.site
+LoadCredentialEncrypted=sites.token:/etc/personal-agents/planet-lab-sites.cred
+WorkingDirectory=/opt/personal-agents/improvement
+ExecStart=/usr/bin/python3 /opt/personal-agents/improvement/daily_report.py
+TimeoutStartSec=15min
+Restart=on-failure
+RestartSec=2min
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/personal-agent/planet-lab
