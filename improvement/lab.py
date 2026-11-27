@@ -1,6 +1,5 @@
 """Run a resumable, evidence-driven improvement cycle for Planet."""
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import difflib
 import fcntl
@@ -9,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -26,6 +26,7 @@ ROLES = {
     'Ji An': ('gpt-6.1-sol', 'Challenge causal claims and design reproducible tests.'),
     'Engineering teammate': ('gpt-6.1-terra', 'Inspect the implementation and consider simpler alternatives.'),
 }
+LIVE_ROOT = Path('/opt/personal-agents')
 TOPICS = [
     ('Reliable Codex app-server diagnostics', 'app/codex_rpc.py', '2303.17651'),
     ('Reliable reminders and scheduling', 'app/reminder_scheduler.py', '2305.14325'),
@@ -140,10 +141,11 @@ def call_model(actor, model, prompt, properties, sandbox_dir):
                 CODEX, 'exec', '--ignore-user-config', '--ignore-rules', '--disable', 'shell_tool',
                 '--disable', 'multi_agent', '--disable', 'plugins', '--disable', 'skill_search',
                 '-c', 'web_search="disabled"', '-c', 'approval_policy="never"',
+                '-c', 'model_reasoning_effort="low"',
                 '--ephemeral', '--skip-git-repo-check', '--sandbox', 'read-only', '-C', directory,
                 '--json', '--model', model, '--output-schema', str(path), '-',
             ], input=COMMON + '\n\n' + f'You are {actor}.\n\n' + prompt, env=env,
-                capture_output=True, text=True, timeout=160)
+                capture_output=True, text=True, timeout=95)
         except subprocess.TimeoutExpired as exc:
             raise ModelError(f'{actor} timed out') from exc
     thread = None
@@ -167,6 +169,8 @@ def call_model(actor, model, prompt, properties, sandbox_dir):
                 failure = ' (subscription or rate limit)'
             elif 'model' in message and ('not supported' in message or 'not available' in message):
                 failure = ' (model unavailable)'
+            if message and not failure:
+                print(f'Local model diagnostic for {actor}: {clean(message, 400)}', file=sys.stderr, flush=True)
     if result.returncode or not finished or not output or not thread or not TOKEN.fullmatch(thread):
         raise ModelError(f'{actor} ({model}) could not complete this stage{failure}')
     try:
@@ -247,9 +251,9 @@ class Lab:
         self.site = os.environ.get('PLANET_LAB_SITE')
         self.secret = Path(os.environ.get('CREDENTIALS_DIRECTORY', '/nonexistent')) / 'sites.token'
 
-    def history(self):
+    def history(self, limit=24):
         paths = sorted(self.records.glob('*.json'), reverse=True)
-        return [json.loads(path.read_text()) for path in paths[:24]]
+        return [json.loads(path.read_text()) for path in paths[:limit]]
 
     def mirror(self):
         if not self.site or not self.secret.is_file():
@@ -346,31 +350,49 @@ class Lab:
         self.save(run, mirror=False)
         return sha
 
-    def run(self):
-        for previous in self.history():
+    def recover_publication(self):
+        for previous in self.history(limit=None):
             if previous['state'] == 'running':
                 previous['state'] = 'failed'
                 previous['outcome'] = 'Interrupted before the cycle completed.'
                 self.event(previous, 'check', 'Interrupted cycle')
-            if previous.get('outbox') and previous['outbox'] != previous.get('publishedCommit'):
+                ref = previous.get('outbox') or previous['base']
+                with tempfile.TemporaryDirectory(dir=self.state) as temp:
+                    checkout = Path(temp) / 'source'
+                    git(self.repo, 'worktree', 'add', '--detach', str(checkout), ref, env=self.git_env)
+                    try:
+                        self.git_record(previous, checkout, 'Record interrupted improvement cycle')
+                    finally:
+                        git(self.repo, 'worktree', 'remove', '--force', str(checkout), env=self.git_env)
+            published = previous.get('publishedCommit') or ''
+            if previous.get('outbox') and previous['outbox'] != published:
                 self.push(previous)
+
+    def run(self):
         status = maintenance('status')
         if status['owner_stopped'] or Path.home().joinpath('.hermes/ESTOP').exists():
             print('Owner pause is active; no improvement cycle started', flush=True)
             return
         base = self.ensure_repo()
+        self.recover_publication()
         history = self.history()
         # An already published verified candidate becomes the next working base
         # when it is also the current applied release.
-        active_sha = status['active'].get('commit')
-        for previous in history:
-            if previous.get('candidateCommit') == active_sha and previous.get('github') and active_sha:
-                if git(self.repo, 'cat-file', '-e', active_sha + '^{commit}', check=False).returncode == 0:
-                    base = active_sha
-                break
+        active = next((item for item in status['candidates'] if item['id'] == status['active']['id']), {})
+        active_sha = active.get('commit')
+        if active_sha and any(previous.get('candidateCommit') == active_sha and previous.get('github')
+                              for previous in history):
+            if git(self.repo, 'merge-base', '--is-ancestor', base, active_sha,
+                   env=self.git_env, check=False).returncode == 0:
+                base = active_sha
         finished = [item for item in history if item['state'] != 'skipped']
         next_focus = finished[0].get('nextFocus', '') if finished else ''
         topic, target, paper = TOPICS[len(finished) % len(TOPICS)]
+        if (finished and finished[0]['state'] == 'failed'
+                and (len(finished) < 3 or finished[0]['topic'] != finished[2]['topic'])):
+            last = finished[0]
+            topic, target, paper = next((row for row in TOPICS if row[0] == last['topic']),
+                                        (topic, target, paper))
         tracked = set(git(self.repo, 'ls-tree', '-r', '--name-only', base, env=self.git_env).stdout.splitlines())
         if (FOCUS.fullmatch(next_focus) and next_focus in tracked
                 and (not finished or next_focus != finished[0].get('target'))):
@@ -399,7 +421,7 @@ class Lab:
     def experiment(self, run, checkout, target, paper, finished, temp):
         title, context = SOURCES[paper]
         source_url = 'https://arxiv.org/abs/' + paper
-        self.event(run, 'evidence', title, context + '\n' + source_url)
+        self.event(run, 'evidence', title, context, url=source_url)
         lookup_terms = {
             '2303.17651': 'software agent self refinement regression tests',
             '2305.14325': 'multiagent debate software engineering evaluation',
@@ -410,7 +432,8 @@ class Lab:
         references = literature(lookup_terms[paper])
         if references:
             self.event(run, 'evidence', 'Related research from OpenAlex', '\n'.join(references))
-        previous = [{'topic': r['topic'], 'outcome': r['outcome']} for r in finished[:5]]
+        previous = [{'topic': r['topic'], 'state': r['state'],
+                     'verified': r['verified']} for r in finished[:5]]
         original = (checkout / target).read_text()
         index = git(checkout, 'ls-files', 'app', 'tests', 'maintenance', 'mission-control', 'whatsapp-bridge', 'improvement',
                     env=self.git_env).stdout
@@ -422,10 +445,13 @@ class Lab:
                  f'{original[:24_000]}')
         proposals = self.debate(run, brief, {}, 'proposal', temp)
         critiques = self.debate(run, brief, proposals, 'critique', temp)
-        model = ROLES['Ji Eun'][0]
-        _, decision = call_model('Ji Eun', model, brief + '\n\nProposals and counterarguments:\n'
+        model, _, decision = self.contribution('Ji Eun', ROLES['Ji Eun'][0], brief + '\n\nProposals and counterarguments:\n'
                                  + json.dumps([proposals, critiques], ensure_ascii=False)
-                                 + '\nDecide whether an isolated patch and regression are justified. '
+                                 + '\nThe proposals and critiques above are the CURRENT seats. '
+                                 'The brief also contains older outcomes, which do not affect attendance. '
+                                 'Choose one small feasible experiment when it has a specific falsifiable '
+                                 'test and practical benefit. At this stage no test has run. Proceed means '
+                                 'permission to try in isolation, never evidence or approval to deploy. '
                                  'Give any next_focus as a path in the public index, otherwise empty. '
                                  'If a model-routing experiment helps, choose two or three models from '
                                  f'{sorted(TRIAL_MODELS)} in compare_models, otherwise return an empty list.',
@@ -445,16 +471,36 @@ class Lab:
         if len(original) > 24_000:
             brief += '\nFor a large file, select an issue in the supplied source excerpt.'
         engineering_model = ROLES['Engineering teammate'][0]
-        _, proposal = call_model('Engineering teammate', engineering_model,
-                                 brief + '\nChosen experiment:\n' + json.dumps(decision)
-                                 + '\nReturn up to eight exact, unique old/new substring replacements '
-                                 'for the selected file and a complete Python unittest module that would '
-                                 'fail against the original and pass after the patch. Test real behavior.',
-                                 PATCH, temp)
-        code, test = candidate_source(original, proposal, regression)
-        if target.endswith('.py'):
-            compile(code, target, 'exec')
+        patch_prompt = (brief + '\nChosen experiment:\n' + json.dumps(decision)
+                        + '\nReturn up to eight exact, unique old/new substring replacements '
+                        'for the selected file and a complete Python unittest module that would '
+                        'fail against the original and pass after the patch. Test real behavior. '
+                        'Copy anchors verbatim including whitespace. The module belongs under tests/.')
+        for attempt in range(2):
+            engineering_model, _, proposal = self.contribution('Engineering teammate', engineering_model,
+                                                                 patch_prompt, PATCH, temp)
+            try:
+                code, test = candidate_source(original, proposal, regression)
+                if target.endswith('.py'):
+                    compile(code, target, 'exec')
+                break
+            except (ValueError, SyntaxError) as exc:
+                if attempt:
+                    raise
+                self.event(run, 'check', 'Candidate construction retry',
+                           'The first patch did not apply cleanly or compile.')
+                patch_prompt += '\nThe first patch did not apply cleanly or compile. Try a smaller exact anchor.'
         files = self.source(run['base'])
+        live_matches_target = True
+        for name, text in files.items():
+            if name.startswith(('app/', 'mission-control/', 'whatsapp-bridge/')):
+                live_file = LIVE_ROOT / name
+                if live_file.is_file() and live_file.suffix in {'.py', '.js', '.mjs', '.css', '.html'}:
+                    live_content = live_file.read_text()
+                    if name == target:
+                        live_matches_target = text == live_content
+                    elif name not in {'app/backup.py', 'app/shared_sync.py', 'app/control.py'}:
+                        files[name] = live_content
         files[regression] = test
         baseline = check(files, 'Baseline regression control for ' + run['topic'], run['base'])
         expected_failure = re.search(r'(?:FAIL|ERROR): test_[^\n]+\(test_lab_[^\n]+\)',
@@ -486,7 +532,7 @@ class Lab:
         approvals = []
         for actor, reviewer in [('Ji An', 'ji-an'), ('Sol reviewer', 'lab-sol-reviewer')]:
             model = ROLES['Ji An'][0]
-            thread, review = call_model(actor, model, review_prompt, REVIEW, temp)
+            _, thread, review = self.contribution(actor, model, review_prompt, REVIEW, temp)
             approved = review['approve']
             note = clean(review['notes']) or 'Reviewer supplied no notes.'
             maintenance('review', {'candidate_id': candidate['id'], 'reviewer': reviewer,
@@ -506,7 +552,7 @@ class Lab:
         if not self.push(run):
             self.event(run, 'release', 'Release waiting for verified GitHub push')
             return
-        if candidate['changed_files'] != [target] or candidate['protected_changes']:
+        if not live_matches_target or candidate['changed_files'] != [target] or candidate['protected_changes']:
             self.event(run, 'release', 'Candidate retained for integration',
                        'The deployed tree differs from this candidate outside the debated change.')
             return
@@ -550,6 +596,16 @@ class Lab:
                        'The small fixed fixture measures classification only.', model=model)
 
     @staticmethod
+    def contribution(actor, model, prompt, schema, temp):
+        try:
+            thread, answer = call_model(actor, model, prompt, schema, temp)
+            return model, thread, answer
+        except ModelError:
+            retry_model = 'gpt-6.1-terra' if actor == 'Ji Eun' else model
+            thread, answer = call_model(actor, retry_model, prompt, schema, temp)
+            return retry_model, thread, answer
+
+    @staticmethod
     def explain(value):
         return '\n'.join(clean(value[key], 780) for key in ('position', 'test', 'risk') if value[key])
 
@@ -559,22 +615,19 @@ class Lab:
             '\nCritique the other proposals. Identify weak evidence, alternatives, and a decisive test. '
             'Independent proposals follow:\n' + json.dumps(proposals, ensure_ascii=False)
         )
-        futures = {}
         results = {}
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            for actor, (model, lens) in ROLES.items():
-                future = pool.submit(call_model, actor, model, brief + '\n' + lens + instructions,
-                                     ANSWER, temp)
-                futures[future] = actor
-            for future in as_completed(futures):
-                actor = futures[future]
-                try:
-                    _, value = future.result()
-                except ModelError as exc:
-                    self.event(run, 'check', 'Seat unavailable', str(exc), actor, ROLES[actor][0])
-                    continue
-                results[actor] = {key: clean(text, 780) for key, text in value.items()}
-                self.event(run, phase, value['title'], self.explain(value), actor, ROLES[actor][0])
+        # Fresh sessions receive the same inputs. Running them in sequence avoids
+        # competing with active assistant conversations for simultaneous requests.
+        for actor, (model, lens) in ROLES.items():
+            try:
+                returned_model, _, value = self.contribution(actor, model,
+                                                              brief + '\n' + lens + instructions,
+                                                              ANSWER, temp)
+            except ModelError as exc:
+                self.event(run, 'check', 'Seat unavailable', str(exc), actor, model)
+                continue
+            results[actor] = {key: clean(text, 780) for key, text in value.items()}
+            self.event(run, phase, value['title'], self.explain(value), actor, returned_model)
         if 'Ji Eun' not in results or 'Ji An' not in results:
             raise ModelError('Both lead seats must contribute before choosing an experiment')
         return results
