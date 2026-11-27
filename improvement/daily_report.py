@@ -29,7 +29,7 @@ def summarize_day(runs, day, closed):
     collaborations = Counter()
     counts = Counter()
     work = []
-    for run in runs:
+    for run in sorted(runs, key=lambda item: item.get('started', ''), reverse=True):
         events = [event for event in run['events'] if local_day(event.get('at')) == day]
         if not events and local_day(run.get('started')) != day:
             continue
