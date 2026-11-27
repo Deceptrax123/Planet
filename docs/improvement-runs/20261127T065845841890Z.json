@@ -1,0 +1,105 @@
+{
+  "id": "20261127T065845841890Z",
+  "topic": "Evaluation harnesses and measurable routing changes",
+  "started": "2026-11-27T06:58:45+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "app/assistant_mcp.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-27T06:58:45+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Evaluation harnesses and measurable routing changes\napp/assistant_mcp.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/app/assistant_mcp.py"
+    },
+    {
+      "at": "2026-11-27T06:58:46+00:00",
+      "kind": "evidence",
+      "title": "SWE-bench",
+      "body": "Measure engineering work with executable repository tests.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2310.06770"
+    },
+    {
+      "at": "2026-11-27T06:58:46+00:00",
+      "kind": "evidence",
+      "title": "Related research from OpenAlex",
+      "body": "Power Systems Agent Benchmark: Executable Evaluation of AI Agents in Electric Power Engineering (2026) https://doi.org/10.48550/arxiv.2606.20950\nAgentic Harness Engineering: Observability-Driven Automatic Evolution of Coding-Agent Harnesses (2026) https://doi.org/10.48550/arxiv.2604.25850\nBeyond Executable Models: The Pufibara Agent Harness and the Modelica Agent Workflow Benchmark for Physical System Modeling (2026) https://doi.org/10.48550/arxiv.2608.23653",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:58:54+00:00",
+      "kind": "proposal",
+      "title": "Add deterministic evaluation for MCP tool routing",
+      "body": "The supplied excerpt defines the `tools/call` routing boundary, but offers no evidence that routing is currently unreliable. Propose a focused change: add a no-network regression test that sends representative `tools/call` messages through `handle()` and verifies each routes exactly once to the intended broker request, with a 130-second timeout only for `research_*` tools. Also assert malformed arguments return an error without calling the broker. This makes routing behavior measurable without changing live model defaults.\nRun the new test with a stubbed `request`; assert tool name, arguments, timeout, and call count for research and non-research tools, plus zero calls for invalid schemas.\nThe excerpt does not include the existing test harness or demonstrate a routing defect. The proposal is falsified if current tests already cover these cases, or if the new regression passes without protecting against a reproducible routing failure.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:08+00:00",
+      "kind": "proposal",
+      "title": "Add an offline MCP dispatch regression",
+      "body": "Add a table-driven test in tests/test_assistant.py for handle(), replacing the broker request with a recording stub and controlling the ESTOP check. The supplied source supports a routing contract, but does not establish a routing defect; keep production routing and live model defaults unchanged.\nFor every advertised tool, supply schema-valid arguments and assert exactly one broker call with the same name and arguments. Assert timeout=130 for research tools and no explicit timeout otherwise. Add invalid-argument and unknown-tool cases asserting zero broker calls, plus an active-ESTOP research_submit case asserting zero calls and isError=true. Run entirely offline. Falsifier: any dispatch, argument, timeout, or rejection assertion differs from this contract.\nThis measures facade routing correctness, not remote execution reliability or engineering productivity. Consistent with SWE-bench’s executable evaluation approach, report actual test results before claiming improvement. No tests were executed here.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:17+00:00",
+      "kind": "proposal",
+      "title": "Test research timeout routing at the MCP boundary",
+      "body": "Keep the existing routing: research tools receive a 130-second broker timeout, while other tools use the broker default. Add a deterministic regression for handle() using a mocked request function. Assert that research_probe forwards timeout=130 and memory_context forwards no timeout, with valid arguments and no network access.\nRun the repository test suite with the new regression. The claim is that this test will detect an accidental change to either timeout route; falsify it by changing either route and observing whether the test fails.\nThe supplied implementation supports the routing claim, but the existing tests and broker implementation were not supplied. This proposal does not establish that 130 seconds is optimal or improve live routing by itself.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:27+00:00",
+      "kind": "critique",
+      "title": "Offline MCP dispatch regression",
+      "body": "The proposals converge on a useful, bounded evaluation: test the `handle()` dispatch contract with a stubbed broker. The excerpt supports the 130-second timeout for `research_*` and default timeout for other tools, but does not show a current routing failure or the existing test coverage. Ji An’s version is strongest because it also checks invalid input, unknown tools, and ESTOP rejection; however, requiring schema-valid arguments for every advertised tool could make the test brittle and distract from the dispatch claim. Ji Eun’s narrower coverage is easier to maintain but omits ESTOP and unknown-tool cases. The teammate’s two examples are too narrow to establish the wider routing contract. Avoid changing production routing absent a reproducible defect.\nAdd table-driven, offline tests in `tests/test_assistant.py` for representative research and non-research calls, asserting broker name, arguments, call count, and timeout behavior. Also assert malformed arguments, unknown tools, and active-ESTOP submission do not call the broker. Stub the broker and control the ESTOP path. Decisive check: deliberately alter the research timeout or dispatch target and confirm the corresponding test fails; restore it and confirm it passes. Existing tests were not available here, so first check whether they already cover these cases.\nThis measures facade dispatch behavior, not whether the 130-second budget is optimal or whether remote research execution succeeds. No repository tests were run; the supplied excerpt alone cannot establish that this adds coverage absent duplication.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:38+00:00",
+      "kind": "critique",
+      "title": "Verify dispatch coverage with offline mutation tests",
+      "body": "All three proposals support regression coverage, not a demonstrated routing improvement. Ji Eun’s malformed-argument claim needs correction: handle() raises ValueError before its try block; main() converts that into a JSON-RPC error. The teammate’s two-tool test is useful but misses other advertised tools and ESTOP. My broader proposal should distinguish handle() exceptions from returned isError responses. Existing test coverage is unknown; keep production routing and model defaults unchanged.\nUse a recording broker stub and controlled ESTOP check. Verify every advertised tool forwards valid arguments exactly once, research tools receive timeout=130, and others omit timeout. Invalid arguments and unknown tools must raise ValueError with zero broker calls; active ESTOP must return isError=true for research_submit with zero calls. Decisive test: independently mutate timeout selection, forwarded name, forwarded arguments, and ESTOP enforcement; require the corresponding regression to fail. Run offline and report actual results.\nNo tests were executed or existing tests inspected. Passing regressions establish facade contracts, not optimal timeouts, remote reliability, or engineering productivity. SWE-bench motivates executable evaluation but supplies no causal evidence for this specific change.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:48+00:00",
+      "kind": "critique",
+      "title": "Evaluate MCP dispatch without changing routing",
+      "body": "Ji An’s proposal covers the advertised tools and the ESTOP boundary, but a full table requires valid fixtures for every schema and may duplicate existing tests. Ji Eun’s representative cases are simpler but do not establish coverage for every tool. The timeout-only proposal is narrower still. The supplied code shows no routing defect; inspect existing tests before adding coverage. Schema validation raises ValueError before the broker call, while an active ESTOP returns isError, so the regression must distinguish those outcomes.\nWith request replaced by a recording stub and the ESTOP check controlled, exercise a research tool and a non-research tool, asserting one call with unchanged arguments and the appropriate timeout. Assert invalid arguments and an unknown tool raise ValueError without a broker call; assert an active ESTOP returns isError without a broker call. Add all-tool cases only where existing coverage warrants them. Verify the regression fails when either timeout route is deliberately changed.\nNo tests were run, and the supplied material does not establish what existing tests cover or whether 130 seconds is optimal. This evaluates facade dispatch, not remote execution reliability or engineering productivity.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T06:59:57+00:00",
+      "kind": "decision",
+      "title": "Offline MCP dispatch regression",
+      "body": "Try a focused, no-network regression around `handle()` using a recording broker stub. Check a research and a non-research dispatch, plus invalid arguments, unknown tools, and ESTOP rejection. The supplied code supports these contracts but does not show a routing defect.\nNo test has run. Falsifiable check: alter timeout selection or forwarded dispatch and confirm the corresponding assertion fails; invalid input, unknown tools, and active ESTOP must reject without a broker call.\nExisting test coverage is unknown, so inspect it before adding cases to avoid duplication. This measures facade behavior; it does not show that the 130-second timeout is optimal.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-27T06:59:57+00:00",
+  "nextFocus": "tests/test_assistant.py"
+}
