@@ -112,6 +112,14 @@ class Scheduler:
         with self.store.connect() as db:
             items = db.execute("SELECT * FROM outbox WHERE status IN ('pending','retry') AND due_at<=? AND (next_attempt IS NULL OR next_attempt<=?) ORDER BY due_at LIMIT 10", (stamp, stamp)).fetchall()
         for item in items:
+            if item["reminder_id"]:
+                with self.store.connect() as db:
+                    reminder = db.execute("SELECT allow_quiet FROM reminders WHERE id=?", (item["reminder_id"],)).fetchone()
+                    if reminder:
+                        end = quiet_end(when, reminder["allow_quiet"])
+                        if end > when:
+                            db.execute("UPDATE outbox SET due_at=? WHERE id=? AND status IN ('pending','retry')", (end.isoformat(), item["id"]))
+                            continue
             with self.store.connect() as db:
                 notification = db.execute("SELECT expires_at,image_url FROM notifications WHERE id=?", (item["id"],)).fetchone()
                 if notification:
