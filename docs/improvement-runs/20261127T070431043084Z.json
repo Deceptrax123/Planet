@@ -150,12 +150,31 @@
       "actor": "Sol reviewer",
       "model": "gpt-6.1-sol",
       "url": ""
+    },
+    {
+      "at": "2026-11-27T07:06:56+00:00",
+      "kind": "release",
+      "title": "Release queued",
+      "body": "The broker waits for both gateways to be idle.",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:08:36+00:00",
+      "kind": "release",
+      "title": "Release still queued",
+      "body": "The maintenance broker keeps the candidate queued until idle.",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
     }
   ],
   "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261127T070431043084Z",
   "outcome": "The original failed the new regression, the candidate passed, and both reviewers approved.",
-  "updated": "2026-11-27T07:06:52+00:00",
+  "updated": "2026-11-27T07:08:36+00:00",
   "nextFocus": "tests/test_notifications.py",
-  "publishedCommit": "b9aaaf0c5dcf41d6e35a6fe4f968ce3597733eef",
-  "candidateCommit": "e070264f6057cbda32bf4e6e382c5ab3d1e4e8d3"
+  "publishedCommit": "87ff7eef4f2d1173c11a20b44a9d117cee7ee5c3",
+  "candidateCommit": "e070264f6057cbda32bf4e6e382c5ab3d1e4e8d3",
+  "releaseCandidate": "c_5acf5414b4e69d05a6b35c52"
 }
