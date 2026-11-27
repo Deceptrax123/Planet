@@ -56,6 +56,7 @@ ANSWER = {
 }
 DECISION = {
     **ANSWER, 'proceed': {'type': 'boolean'},
+    'experiment': {'type': 'string', 'enum': ['repair', 'harness']},
     'next_focus': {'type': 'string'},
     'compare_models': {'type': 'array', 'items': {'type': 'string'}},
 }
@@ -397,6 +398,10 @@ class Lab:
                 base = active_sha
         finished = [item for item in history if item['state'] != 'skipped']
         next_focus = finished[0].get('nextFocus', '') if finished else ''
+        priority = self.state / 'next-focus'
+        if priority.is_file():
+            next_focus = priority.read_text().strip()
+            priority.unlink()
         last_target = finished[0].get('target', '') if finished else ''
         last_index = next((i for i, row in enumerate(TOPICS) if row[1] == last_target), -1)
         topic, target, paper = TOPICS[(last_index + 1) % len(TOPICS)]
@@ -467,6 +472,8 @@ class Lab:
                                  'Choose one small feasible experiment when it has a specific falsifiable '
                                  'test and practical benefit. At this stage no test has run. Proceed means '
                                  'permission to try in isolation, never evidence or approval to deploy. '
+                                 'Choose experiment=repair for a behavior defect and experiment=harness '
+                                 'for a test that should detect an intentionally broken control. '
                                  'Give any next_focus as a path in the public index, otherwise empty. '
                                  'If a model-routing experiment helps, choose two or three models from '
                                  f'{sorted(TRIAL_MODELS)} in compare_models, otherwise return an empty list.',
@@ -486,11 +493,19 @@ class Lab:
         if len(original) > 24_000:
             brief += '\nFor a large file, select an issue in the supplied source excerpt.'
         engineering_model = ROLES['Engineering teammate'][0]
+        harness = decision['experiment'] == 'harness'
+        experiment_contract = (
+            'Your edits are an intentional defect used only as the failed control. '
+            'The regression should pass against the original source and fail against the mutation.'
+            if harness else
+            'Your edits repair existing behavior. The regression should fail against the original '
+            'and pass against the repaired code.'
+        )
         patch_prompt = (brief + '\nChosen experiment:\n' + json.dumps(decision)
                         + '\nReturn up to eight exact, unique old/new substring replacements '
-                        'for the selected file and a complete Python unittest module that would '
-                        'fail against the original and pass after the patch. Test real behavior. '
-                        'Copy anchors verbatim including whitespace. The module belongs under tests/.')
+                        'for the selected file and a complete Python unittest module. Test real behavior. '
+                        'Copy anchors verbatim including whitespace. The module belongs under tests/. '
+                        + experiment_contract)
         for attempt in range(2):
             engineering_model, _, proposal = self.contribution('Engineering teammate', engineering_model,
                                                                  patch_prompt, PATCH, temp)
@@ -499,12 +514,17 @@ class Lab:
                 if target.endswith('.py'):
                     compile(code, target, 'exec')
                 break
-            except (ValueError, SyntaxError):
+            except (ValueError, SyntaxError) as error:
+                if isinstance(error, SyntaxError):
+                    diagnostic = f'{error.msg} on line {error.lineno} of {error.filename}'
+                else:
+                    diagnostic = str(error)
+                diagnostic = clean(diagnostic, 240)
+                self.event(run, 'check', 'Candidate construction failed' if attempt else 'Candidate construction retry',
+                           diagnostic)
                 if attempt:
                     raise
-                self.event(run, 'check', 'Candidate construction retry',
-                           'The first patch did not apply cleanly or compile.')
-                patch_prompt += '\nThe first patch did not apply cleanly or compile. Try a smaller exact anchor.'
+                patch_prompt += '\nThe first patch failed: ' + diagnostic + '. Try a smaller exact anchor.'
         files = self.source(run['base'])
         live_matches_target = True
         for name, text in files.items():
@@ -518,18 +538,24 @@ class Lab:
                     elif name not in {'app/backup.py', 'app/shared_sync.py', 'app/control.py'}:
                         files[name] = live_content
         files[regression] = test
-        baseline = check(files, 'Baseline regression control for ' + run['topic'], run['base'])
+        if harness:
+            files[target] = code
+        baseline = check(files, ('Mutation control for ' if harness else 'Baseline regression control for ')
+                         + run['topic'], run['base'])
         expected_failure = re.search(r'(?:FAIL|ERROR): test_[^\n]+\(test_lab_[^\n]+\)',
                                      baseline.get('check_log', ''))
-        self.event(run, 'check', 'Baseline regression control',
-                   ('The new test reproduced the issue.\n' if expected_failure else
-                    'The expected baseline failure was not observed.\n') + safe_test_report(baseline))
-        (checkout / target).write_text(code)
+        self.event(run, 'check', 'Mutation control' if harness else 'Baseline regression control',
+                   ('The new test failed on the control.\n' if expected_failure else
+                    'The expected control failure was not observed.\n') + safe_test_report(baseline))
+        paths = (regression,)
+        if not harness:
+            (checkout / target).write_text(code)
+            paths += (target,)
         (checkout / regression).write_text(test)
-        sha = self.git_record(run, checkout, 'Implement candidate and regression test',
-                              (target, regression), archive=False)
+        message = 'Add regression harness' if harness else 'Implement candidate and regression test'
+        sha = self.git_record(run, checkout, message, paths, archive=False)
         run['candidateCommit'] = sha
-        files[target] = code
+        files[target] = original if harness else code
         candidate = check(files, 'Debated candidate for ' + run['topic'], sha)
         self.event(run, 'candidate', proposal['title'], 'Isolated candidate ' + candidate['id'],
                    'Engineering teammate', engineering_model, PLANET + '/commit/' + sha)
@@ -542,9 +568,11 @@ class Lab:
 
         diff = ''.join(difflib.unified_diff(original.splitlines(True), code.splitlines(True),
                                            'a/' + target, 'b/' + target))
+        purpose = ('Assess whether this regression guards existing behavior and detects a meaningful '
+                   'intentional mutation. The mutation will not be shipped.\nMutation:' if harness else
+                   'Assess whether behavior improves and the regression is meaningful.\nCode diff:')
         review_prompt = (brief + '\nReview this exact candidate and regression as independent quality control. '
-                         'Approve only if behavior improves and the regression is meaningful. '
-                         f'Both test runs completed as expected.\nCode diff:\n{diff}\nTest:\n{test}')
+                         'Both test runs completed as expected. ' + purpose + f'\n{diff}\nTest:\n{test}')
         approvals = []
         for actor, reviewer in [('Ji An', 'ji-an'), ('Sol reviewer', 'lab-sol-reviewer')]:
             model = ROLES['Ji An'][0]
@@ -563,10 +591,15 @@ class Lab:
 
         run['verified'] = True
         run['state'] = 'complete'
-        run['outcome'] = 'The original failed the new regression, the candidate passed, and both reviewers approved.'
+        run['outcome'] = ('The harness detected the intentional mutation, passed on the original, '
+                          'and both reviewers approved.' if harness else
+                          'The original failed the new regression, the candidate passed, and both reviewers approved.')
         self.git_record(run, checkout, 'Record verified improvement and independent reviews')
         if not self.push(run):
             self.event(run, 'release', 'Release waiting for verified GitHub push')
+            return
+        if harness:
+            self.event(run, 'release', 'Verified harness published', 'The regression changes test code only.')
             return
         if not live_matches_target or candidate['changed_files'] != [target] or candidate['protected_changes']:
             self.event(run, 'release', 'Candidate retained for integration',
