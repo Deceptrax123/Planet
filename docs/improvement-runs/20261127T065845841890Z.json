@@ -2,7 +2,7 @@
   "id": "20261127T065845841890Z",
   "topic": "Evaluation harnesses and measurable routing changes",
   "started": "2026-11-27T06:58:45+00:00",
-  "state": "running",
+  "state": "failed",
   "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
   "target": "app/assistant_mcp.py",
   "verified": false,
@@ -96,10 +96,38 @@
       "actor": "Ji Eun",
       "model": "gpt-6-luna",
       "url": ""
+    },
+    {
+      "at": "2026-11-27T07:00:01+00:00",
+      "kind": "github",
+      "title": "Debate recorded on Planet",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/tree/improvement/20261127T065845841890Z"
+    },
+    {
+      "at": "2026-11-27T07:00:25+00:00",
+      "kind": "check",
+      "title": "Candidate construction retry",
+      "body": "The first patch did not apply cleanly or compile.",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:00:49+00:00",
+      "kind": "check",
+      "title": "Cycle stopped",
+      "body": "SyntaxError",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
     }
   ],
-  "github": "",
-  "outcome": "",
-  "updated": "2026-11-27T06:59:57+00:00",
-  "nextFocus": "tests/test_assistant.py"
+  "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261127T065845841890Z",
+  "outcome": "SyntaxError",
+  "updated": "2026-11-27T07:00:49+00:00",
+  "nextFocus": "tests/test_assistant.py",
+  "publishedCommit": "1ab04ebe9f403852988ccd3aab3da41a0349e520"
 }
