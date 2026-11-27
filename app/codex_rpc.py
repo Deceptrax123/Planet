@@ -11,13 +11,39 @@ class CodexRPC:
         self.process = subprocess.Popen([binary, "app-server", "--listen", "stdio://"],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, cwd=cwd, env=env)
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.process.stdout, selectors.EVENT_READ)
-        self.buffer = b""
-        self.sequence = 0
-        self.notifications = []
-        self.call("initialize", {"clientInfo": {"name": "personal-assistant-monitor", "version": "1.0.0"}, "capabilities": {"experimentalApi": True}})
-        self.send({"method": "initialized", "params": {}})
+        self.selector = None
+        try:
+            self.selector = selectors.DefaultSelector()
+            self.selector.register(self.process.stdout, selectors.EVENT_READ)
+            self.buffer = b""
+            self.sequence = 0
+            self.notifications = []
+            self.call("initialize", {"clientInfo": {"name": "personal-assistant-monitor", "version": "1.0.0"}, "capabilities": {"experimentalApi": True}})
+            self.send({"method": "initialized", "params": {}})
+        except BaseException:
+            self._cleanup_failed_init()
+            raise
+
+    def _cleanup_failed_init(self):
+        def attempt(action):
+            try:
+                action()
+            except BaseException:
+                pass
+
+        if self.selector is not None:
+            attempt(self.selector.close)
+        attempt(self.process.terminate)
+        try:
+            self.process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            attempt(self.process.kill)
+            attempt(lambda: self.process.wait(timeout=10))
+        except BaseException:
+            pass
+        for stream in (self.process.stdin, self.process.stdout):
+            if stream is not None:
+                attempt(stream.close)
 
     def send(self, message):
         self.process.stdin.write(json.dumps(message).encode() + b"\n")
