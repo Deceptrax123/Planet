@@ -321,13 +321,35 @@
       "url": "",
       "provider": "openai-codex",
       "verdict": "approve"
+    },
+    {
+      "at": "2026-11-27T18:04:46+00:00",
+      "kind": "release",
+      "title": "Release queued",
+      "body": "The broker waits for both gateways to be idle.",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-27T18:14:47+00:00",
+      "kind": "release",
+      "title": "Release state: failed",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
     }
   ],
   "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261127T180001634735Z",
   "outcome": "The original failed the new regression, the candidate passed, and both reviewers approved.",
-  "updated": "2026-11-27T18:04:42+00:00",
+  "updated": "2026-11-27T18:14:47+00:00",
   "nextFocus": "app/codex_rpc.py",
   "decision": "advanced",
-  "publishedCommit": "932defc174a95b639cd73e1d8051aac55e3cac80",
-  "candidateCommit": "bb33b92635d967760f0d3927476a35f43028ef7d"
+  "publishedCommit": "d01d7be95af5b291dc9da1a2a656090565350ded",
+  "candidateCommit": "bb33b92635d967760f0d3927476a35f43028ef7d",
+  "releaseCandidate": "c_30ea3ff952f2fa38b39d6bd4",
+  "releaseState": "failed"
 }
