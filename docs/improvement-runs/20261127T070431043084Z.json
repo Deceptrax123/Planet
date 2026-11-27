@@ -1,0 +1,105 @@
+{
+  "id": "20261127T070431043084Z",
+  "topic": "Reliable reminders and scheduling",
+  "started": "2026-11-27T07:04:31+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "app/reminder_scheduler.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-27T07:04:31+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Reliable reminders and scheduling\napp/reminder_scheduler.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/app/reminder_scheduler.py"
+    },
+    {
+      "at": "2026-11-27T07:04:31+00:00",
+      "kind": "evidence",
+      "title": "Improving Factuality and Reasoning through Multiagent Debate",
+      "body": "Independent proposals followed by cross-examination.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2305.14325"
+    },
+    {
+      "at": "2026-11-27T07:04:32+00:00",
+      "kind": "evidence",
+      "title": "Related research from OpenAlex",
+      "body": "Large Language Model-Based Agents for Software Engineering: A Survey (2026) https://doi.org/10.1145/3796507\nImproving Factuality and Reasoning in Language Models through Multiagent Debate (2024) https://doi.org/10.48550/arxiv.2305.14325\nSWE-Debate: Competitive Multi-Agent Debate for Software Issue Resolution (2026) https://doi.org/10.1145/3744916.3787810",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:04:41+00:00",
+      "kind": "proposal",
+      "title": "Make recurring weekday reminders skip weekends directly",
+      "body": "In `next_occurrence`, the weekday loop advances by one day only when the candidate is already due or falls on a weekend. A Friday reminder sent after its scheduled time can therefore yield Saturday as its next occurrence, then Sunday, before reaching Monday. Change weekday recurrence to advance past Saturday/Sunday before returning. This gives the owner the next valid weekday after a late Friday delivery.\nFalsifiable regression: for a pending weekdays reminder due Friday, call `next_occurrence` with `after` later than that Friday occurrence; expect the next occurrence to be Monday at the same local time. Also check a Friday reminder sent before its due time still advances to Monday once Friday’s due time passes.\nThe source supports this narrow edge case; verify weekday behavior around timezone and DST boundaries. The claim is falsified if existing logic already returns Monday for a late Friday reminder.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:04:56+00:00",
+      "kind": "proposal",
+      "title": "Recheck quiet hours before retrying reminders",
+      "body": "In app/reminder_scheduler.py, quiet_end() applies when a reminder enters the outbox, but retries bypass it. A reminder attempted just before 23:00 India time can therefore retry during quiet hours. Change dispatch eligibility for reminder-linked items: before claiming them, read allow_quiet and defer their outbox due_at to quiet_end(when, allow_quiet) when necessary. Preserve retry backoff and existing model defaults.\nUse a temporary SQLite store, injected UTC times, and a fake sender. Enqueue a reminder with allow_quiet=False at 22:59 India time; have its first send raise RetryLater(120). Tick at 23:01 and assert no second send; tick at 09:00 the next day and assert delivery. Include allow_quiet=True as a control that retries at 23:01. No network required. These tests are proposed, not executed.\nThe claim is falsified if the supplied implementation already prevents that second send through another eligibility check, or if quiet hours intentionally govern only initial enqueueing. Keep this change limited to reminder-linked items; the supplied source does not establish the quiet-hours policy for proactive notifications.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:05:05+00:00",
+      "kind": "proposal",
+      "title": "Prevent duplicate reminder delivery after an outbox ID collision",
+      "body": "When enqueueing a due reminder, check whether INSERT OR IGNORE actually inserted the outbox row before changing the reminder to queued. If the row already exists, leave the reminder pending and surface the conflict for reconciliation. Currently, an existing outbox row with the same deterministic ID can cause a reminder to become queued without creating a deliverable item, for example if a reminder is rescheduled to a previously used due time.\nUse an in-memory SQLite database and a fake sender. Create a pending reminder and a previously sent outbox item with its deterministic ID, then run one tick. Assert that the reminder does not become queued and that no message is sent. Also verify that a normal due reminder is enqueued and sent once.\nThis proposal is falsified if the store guarantees that a reminder can never return to a previously used due time, or if the existing outbox row is deliberately reused and reconciled elsewhere. The supplied scheduler alone does not establish either guarantee.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:05:16+00:00",
+      "kind": "critique",
+      "title": "Weekday recurrence can return a weekend date",
+      "body": "The strongest source-backed proposal is Ji Eun’s: `next_occurrence` advances weekdays by one day, but its loop stops as soon as the candidate is after `after` and not itself a weekend. For a Friday occurrence delivered late, that can return Saturday. Ji An identifies a separate plausible reliability gap: retry dispatch does not recheck quiet hours, though the source does not establish whether quiet hours are intended to cover retries. The collision proposal also identifies a possible lost reminder, but its impact depends on whether reminder IDs and due dates can be reused; the supplied scheduler does not prove that they can.\nFor the recurrence change, use a deterministic unit test with a `weekdays` reminder due Friday and `after` later that Friday; assert the next occurrence is Monday at the same local time. Add cases for Friday before its due time and a timezone/DST boundary. The claim is falsified if current code already returns Monday in the late-Friday case. For retry quiet hours, the proposed temporary-store/fake-sender test is decisive: a non-quiet-allowed retry must not send at 23:01 India time, and should send at 09:00; test `allow_quiet=True` as a control. These are proposed tests; no execution was performed.\nThe weekday change is narrow, but should preserve local reminder time through timezone transitions. Quiet-hour retry handling requires deciding whether that policy applies to retries and only to reminder-linked messages. The collision case needs store/schema evidence that due dates can recur before treating it as a confirmed defect.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:05:29+00:00",
+      "kind": "critique",
+      "title": "Prioritize retry quiet-hours enforcement",
+      "body": "Ji An’s proposal is supported: quiet_end() runs during enqueueing, while retry dispatch checks only due_at and next_attempt. Recheck reminder quiet-hours eligibility before claiming delivery, preserving next_attempt. Ji Eun’s claim is contradicted by the existing while loop: it repeatedly skips Saturday and Sunday and already returns Monday. The teammate identifies a plausible stranded reminder, but provides no evidence of duplicate delivery; leaving it pending alone would repeatedly encounter the same conflict.\nProposed, not executed: use temporary SQLite state and a fake sender. At 22:59 Asia/Kolkata, raise RetryLater(120); at 23:01 assert no send for allow_quiet=False, then assert delivery at 09:00. Verify allow_quiet=True retries at 23:01, and a later next_attempt still prevents delivery at 09:00. Directly test Friday-to-Monday recurrence to falsify Ji Eun’s claim. For the collision proposal, seed a matching sent outbox row and observe whether the reminder becomes stranded; separately establish whether supported rescheduling can produce that state.\nQuiet-hours enforcement on retries requires confirming that quiet hours cover all reminder attempts. Limit the change to reminder-linked items because notification policy is unspecified. Collision handling needs a defined reconciliation outcome; the supplied scheduler alone does not establish reachable rescheduling behavior. Keep live model defaults unchanged.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:05:42+00:00",
+      "kind": "critique",
+      "title": "Recheck quiet hours before reminder retries",
+      "body": "Ji An’s proposal is supported by the supplied scheduler: quiet hours are applied when a reminder enters the outbox, while retry selection checks only due_at and next_attempt. A retry can therefore be sent during quiet hours. Rechecking quiet_end before claiming a reminder-linked item is a focused fix, provided quiet hours are intended to apply to every attempt. Ji Eun’s proposed weekday fix is unnecessary: the existing loop continues while the candidate is Saturday or Sunday, so a late Friday occurrence advances to Monday. The outbox-collision proposal identifies a plausible stuck-queued state, but its title overstates duplicate-delivery evidence. Leaving the reminder pending alone would repeat the conflict on every tick; an explicit reconciliation state may be preferab\nWith a temporary SQLite store and fake sender, attempt a reminder at 22:59 India time, raise RetryLater(120), and tick at 23:01: assert no second send, then assert delivery at 09:00. Use allow_quiet=True as a control. Separately, test that next_occurrence returns Monday after a late Friday weekday occurrence. For the collision claim, create an existing sent outbox row with the same deterministic ID and check the resulting reminder state; inspect store rescheduling guarantees before choosing a fix. These tests were not executed.\nThe supplied source does not establish whether quiet hours govern retries or whether a reminder can be rescheduled to a previously used due time. The proposed retry change should preserve backoff and leave notification policy unchanged.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:05:51+00:00",
+      "kind": "decision",
+      "title": "Enforce quiet hours on reminder retries",
+      "body": "Choose Ji An’s proposal. Retry dispatch checks due_at and next_attempt but never reapplies quiet_end, so a reminder that fails shortly before 23:00 India time can retry during quiet hours. Limit the change to reminder-linked outbox items and preserve retry backoff. The weekday-recurrence proposal is falsified by the loop, which skips weekend candidates.\nProposed, not run: use a temporary SQLite store and fake sender. At 22:59 India time, make the first send raise RetryLater(120); at 23:01 verify an allow_quiet=False reminder is not sent, then verify delivery at 09:00. Check allow_quiet=True retries at 23:01 and that next_attempt still gates delivery.\nThe source shows quiet hours apply at enqueue, but does not explicitly establish policy for retries. The test should confirm the intended reminder behavior; leave proactive notification policy unchanged.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-27T07:05:51+00:00",
+  "nextFocus": "tests/test_notifications.py"
+}
