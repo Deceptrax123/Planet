@@ -21,6 +21,7 @@ PLANET = 'https://github.com/Deceptrax123/Planet'
 SSH_ORIGIN = 'git@github.com:Deceptrax123/Planet.git'
 CODEX = '/opt/personal-agents/bin/codex'
 INTERVAL_HOURS = 6
+RELEASE_WAIT_SECONDS = 620
 ROLES = {
     'Ji Eun': ('gpt-6-luna', 'Prioritize owner-visible reliability and practical capability.'),
     'Ji An': ('gpt-6.1-sol', 'Challenge causal claims and design reproducible tests.'),
@@ -614,7 +615,8 @@ class Lab:
             maintenance('deploy', {'candidate_id': candidate['id']})
             run['releaseCandidate'] = candidate['id']
             self.event(run, 'release', 'Release queued', 'The broker waits for both gateways to be idle.')
-            for _ in range(25):
+            deadline = time.monotonic() + RELEASE_WAIT_SECONDS
+            while time.monotonic() < deadline:
                 status = maintenance('status', {'candidate_id': candidate['id']})
                 if status['state'] not in {'queued', 'deploying'}:
                     run['releaseState'] = status['state']
@@ -700,6 +702,8 @@ def main():
             return
         lab = Lab(args.state)
         if args.sync:
+            if (lab.repo / ".git").is_dir():
+                lab.recover_publication()
             lab.mirror()
         else:
             lab.run()
