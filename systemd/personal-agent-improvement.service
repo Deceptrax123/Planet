@@ -1,0 +1,30 @@
+[Unit]
+Description=Planet agent improvement debate and experiments
+Wants=network-online.target
+After=network-online.target personal-agent-maintenance.service
+Requires=personal-agent-maintenance.service
+
+[Service]
+Type=oneshot
+User=personal-agent
+Group=personal-agent
+Environment=HOME=/var/lib/personal-agent
+Environment=CODEX_HOME=/var/lib/personal-agent/codex
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PLANET_LAB_SITE=https://ji-eun-ji-an-lab.smudge0110.chatgpt.site
+LoadCredentialEncrypted=sites.token:/etc/personal-agents/planet-lab-sites.cred
+WorkingDirectory=/opt/personal-agents/improvement
+ExecStart=/usr/bin/python3 /opt/personal-agents/improvement/lab.py
+TimeoutStartSec=36min
+UMask=0077
+Nice=10
+CPUWeight=35
+IOWeight=35
+MemoryMax=1G
+TasksMax=80
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/personal-agent/planet-lab /var/lib/personal-agent/codex

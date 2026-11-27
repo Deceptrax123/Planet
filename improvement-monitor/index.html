@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Live research and improvement log for the Planet agent team.">
+<title>Planet · Improvement Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#10131a;--panel:#171c25;--line:#2b3342;--text:#edf1fa;--muted:#aeb9cc;--teal:#7fe5c6;--lilac:#c5b7ff;--amber:#ffcf93;font-family:system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 82% 0%,#212039 0%,transparent 42%),var(--bg);color:var(--text);min-height:100vh}a{color:var(--teal);text-underline-offset:4px}button{font:inherit;color:inherit}button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--teal);outline-offset:3px}.wrap{max-width:1220px;margin:auto;padding:0 clamp(20px,5vw,70px)}header{border-bottom:1px solid var(--line)}.top{display:flex;align-items:center;justify-content:space-between;min-height:70px;gap:12px}.brand{font-weight:700;letter-spacing:.02em}.orb{color:var(--teal);margin-right:10px}.top a{font-size:.88rem}.hero{padding:clamp(34px,6vw,76px) 0 28px}.hero h1{font-size:clamp(2.6rem,7vw,5.3rem);letter-spacing:-.065em;line-height:.99;margin:12px 0 16px;font-weight:650}.hero p{color:var(--muted);margin:0;line-height:1.55}.status{display:inline-flex;gap:8px;align-items:center;color:var(--teal);font-size:.88rem}.status::before{content:'';background:currentColor;width:7px;height:7px;border-radius:50%}.status[data-stale=true]{color:var(--amber)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:32px}.stats div{background:var(--panel);padding:16px 20px}.stats strong{display:block;font-size:1.7rem;font-weight:640}.stats span,.muted{color:var(--muted)}.stats span{font-size:.88rem}.layout{display:grid;grid-template-columns:minmax(245px,1fr) minmax(0,2.5fr);gap:26px;padding-bottom:52px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:14px;overflow:hidden}.section{padding:18px 20px}.section h2,.record h2{font-size:1rem;margin:0 0 14px}.runs{display:grid;gap:8px}.run{width:100%;text-align:left;background:#1c2330;border:1px solid transparent;border-radius:8px;padding:11px;cursor:pointer;line-height:1.35}.run[aria-pressed=true]{border-color:var(--teal);background:#20302f}.run small{display:block;margin-top:5px;color:var(--muted)}.chart{display:flex;gap:7px;align-items:flex-end;height:32px;margin-bottom:18px}.bar{flex:1;background:var(--lilac);border-radius:3px;min-width:5px;max-width:20px}.bar[data-state=failed],.bar[data-state=rejected]{background:var(--amber)}.bar[data-state=complete]{background:var(--teal)}.record{padding:clamp(17px,3vw,32px)}.record h3{font-size:clamp(1.45rem,3.5vw,2.25rem);margin:0 0 10px;line-height:1.15;letter-spacing:-.035em}.record p,.entry p{line-height:1.55;overflow-wrap:anywhere}.filters{display:flex;flex-wrap:wrap;gap:7px;border-block:1px solid var(--line);padding:12px 0;margin:23px 0 8px}.filters button{background:transparent;border:1px solid var(--line);padding:5px 10px;border-radius:6px;font-size:.88rem;cursor:pointer}.filters button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#14221f}.entry{padding:12px 0;border-bottom:1px solid var(--line)}.entry:last-child{border-bottom:0}.entry summary{cursor:pointer;line-height:1.5;overflow-wrap:anywhere}.entry summary::marker{color:var(--teal)}.kind{font-size:.82rem;color:var(--lilac);margin-left:7px}.metadata{font-size:.82rem;color:var(--muted);margin:3px 0 0 15px}.entry p{white-space:pre-wrap;margin:9px 0 7px 15px}.entry a{font-size:.87rem;margin-left:15px}.empty{color:var(--muted);padding:12px 0}.record .link{margin-right:12px;display:inline-block}footer{border-top:1px solid var(--line);padding:18px 0;font-size:.88rem;color:var(--muted)}@media(max-width:720px){.layout{grid-template-columns:1fr;gap:16px}.stats div{padding:11px}.stats span{font-size:.8rem}}
+</style>
+</head>
+<body>
+<header><div class="wrap top"><span class="brand"><span class="orb" aria-hidden="true">◉</span>Planet</span><a href="https://github.com/Deceptrax123/Planet">GitHub repository</a></div></header>
+<main class="wrap">
+<section class="hero">
+<div id="status" class="status" role="status">Connecting to the run log</div>
+<h1>Improvement Lab</h1>
+<p>Ji Eun, Ji An and their team debate changes, run experiments and record the results.</p>
+</section>
+<section class="stats" aria-label="Recent run totals">
+<div><strong id="cycles">–</strong><span>Recent cycles</span></div>
+<div><strong id="debates">–</strong><span>Debate contributions</span></div>
+<div><strong id="verified">–</strong><span>Verified candidates</span></div>
+</section>
+<div class="layout">
+<aside class="panel section" aria-label="Run history"><h2>Run history</h2><div id="chart" class="chart" role="img" aria-label="No runs recorded" hidden></div><div id="runs" class="runs"></div></aside>
+<section class="panel record" aria-label="Selected run"><div id="record"></div><nav id="filters" class="filters" aria-label="Activity filters" hidden></nav><div id="events"></div></section>
+</div>
+</main>
+<footer><div class="wrap">All times use your device’s timezone. The feed refreshes every 20 seconds.</div></footer>
+<script>
+const $ = id => document.getElementById(id);
+const el = (tag, text, cls) => {
+  const node = document.createElement(tag);
+  if (text) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+};
+const state = { runs: [], selected: null, filter: 'All', expanded: new Map(), revision: -1 };
+const labels = { running:'In progress', complete:'Complete', failed:'Failed', rejected:'Rejected', skipped:'Skipped' };
+const groups = {
+  All: () => true,
+  Debate: e => ['proposal','critique','decision','review'].includes(e.kind),
+  Evidence: e => ['evidence','check','candidate'].includes(e.kind),
+  Delivery: e => ['github','release'].includes(e.kind),
+};
+function time(value) {
+  const date = new Date(value);
+  return value && !Number.isNaN(date.valueOf()) ? date.toLocaleString() : 'Time unavailable';
+}
+function ghLink(url, label) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.origin !== 'https://github.com' || !parsed.pathname.toLowerCase().startsWith('/deceptrax123/planet/')) return null;
+    const link = el('a', label, 'link');
+    link.href = parsed.href;
+    return link;
+  } catch { return null; }
+}
+function render() {
+  const run = state.runs.find(item => item.id === state.selected) || state.runs[0];
+  $('runs').replaceChildren();
+  $('record').replaceChildren();
+  $('events').replaceChildren();
+  $('filters').replaceChildren();
+  $('filters').hidden = !run;
+  $('chart').hidden = !run;
+  $('chart').replaceChildren();
+  if (!run) {
+    $('runs').append(el('p','No runs recorded.', 'empty'));
+    $('record').append(el('h2','Waiting for the first debate'),el('p','Updates appear here as each stage finishes.','muted'));
+    return;
+  }
+  state.selected = run.id;
+  const recent = state.runs.slice(0,18).reverse();
+  const max = Math.max(1,...recent.map(item => item.events.length));
+  $('chart').setAttribute('aria-label', 'Recorded activity per cycle, oldest to newest. ' +
+    recent.map(item => item.events.length + ' events').join(', '));
+  for (const item of recent) {
+    const bar = el('div', '', 'bar');
+    bar.style.height = (10 + 90 * item.events.length / max) + '%';
+    bar.dataset.state = item.state;
+    bar.title = time(item.started) + ' · ' + item.events.length + ' events';
+    $('chart').append(bar);
+  }
+  for (const item of state.runs) {
+    const button = el('button', item.topic, 'run');
+    button.setAttribute('aria-pressed', String(item.id === run.id));
+    button.append(el('small', (labels[item.state] || item.state) + ' · ' + time(item.started)));
+    button.onclick = () => { state.selected = item.id; state.filter = 'All'; render(); };
+    $('runs').append(button);
+  }
+  $('record').append(el('h2','Run record'),el('h3',run.topic),
+    el('p',(labels[run.state] || run.state) + ' · ' + time(run.started),'muted'));
+  if (run.outcome) $('record').append(el('p',run.outcome));
+  const branch = ghLink(run.github, 'View run on GitHub');
+  if (branch) $('record').append(branch);
+  for (const name of Object.keys(groups)) {
+    const button = el('button',name);
+    button.setAttribute('aria-pressed',String(state.filter === name));
+    button.onclick = () => { state.filter = name; render(); $('filters').querySelector('[aria-pressed=true]')?.focus(); };
+    $('filters').append(button);
+  }
+  const visible = run.events.map((event,index) => ({ event,index })).filter(item => groups[state.filter](item.event));
+  if (!visible.length) $('events').append(el('p','No activity in this view yet.', 'empty'));
+  for (const {event,index} of visible) {
+    const entry = el('details', '', 'entry');
+    const key = run.id + '/' + index;
+    entry.open = state.expanded.get(key) ?? index === run.events.length - 1;
+    entry.ontoggle = () => state.expanded.set(key,entry.open);
+    const title = el('summary',event.title);
+    title.append(el('span',event.kind,'kind'));
+    entry.append(title,el('div',[event.actor,event.model,time(event.at)].filter(Boolean).join(' · '),'metadata'));
+    if (event.body) entry.append(el('p',event.body));
+    const link = ghLink(event.url,'Open GitHub evidence');
+    if (link) entry.append(link);
+    $('events').append(entry);
+  }
+}
+async function refresh() {
+  try {
+    const response = await fetch('/api/lab', { cache:'no-store' });
+    if (!response.ok) throw Error('Run log unavailable');
+    const data = await response.json();
+    const last = data.runs[0];
+    const stale = last && Date.now() - Date.parse(last.updated || last.started) > ((data.intervalHours || 6) + 1) * 3600000;
+    $('status').textContent = stale ? 'Run log is overdue' : last?.state === 'running' ? 'Debate cycle in progress' : last ? 'Monitoring · every ' + data.intervalHours + ' hours' : 'Connected · waiting for first run';
+    $('status').dataset.stale = Boolean(stale);
+    if (state.revision === data.revision) return;
+    state.revision = data.revision;
+    state.runs = data.runs;
+    $('cycles').textContent = state.runs.length;
+    $('debates').textContent = state.runs.flatMap(item => item.events).filter(groups.Debate).length;
+    $('verified').textContent = state.runs.filter(item => item.verified === true).length;
+    render();
+  } catch {
+    $('status').textContent = 'Run log unavailable · retrying';
+    $('status').dataset.stale = true;
+  }
+}
+render();
+refresh();
+setInterval(refresh,20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Planet improvement debates every six hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00 UTC
+Persistent=true
+Unit=personal-agent-improvement.service
+
+[Install]
+WantedBy=timers.target
