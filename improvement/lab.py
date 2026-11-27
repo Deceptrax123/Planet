@@ -352,16 +352,26 @@ class Lab:
 
     def recover_publication(self):
         for previous in self.history(limit=None):
+            update_record = False
             if previous['state'] == 'running':
                 previous['state'] = 'failed'
                 previous['outcome'] = 'Interrupted before the cycle completed.'
                 self.event(previous, 'check', 'Interrupted cycle')
-                ref = previous.get('outbox') or previous['base']
+                update_record = True
+            candidate_id = previous.get('releaseCandidate')
+            if candidate_id and not previous.get('releaseState'):
+                release = maintenance('status', {'candidate_id': candidate_id})['state']
+                if release not in {'queued', 'deploying'}:
+                    previous['releaseState'] = release
+                    self.event(previous, 'release', 'Release state: ' + release)
+                    update_record = True
+            if update_record:
+                ref = previous.get('outbox') or previous.get('publishedCommit') or previous['base']
                 with tempfile.TemporaryDirectory(dir=self.state) as temp:
                     checkout = Path(temp) / 'source'
                     git(self.repo, 'worktree', 'add', '--detach', str(checkout), ref, env=self.git_env)
                     try:
-                        self.git_record(previous, checkout, 'Record interrupted improvement cycle')
+                        self.git_record(previous, checkout, 'Update improvement cycle record')
                     finally:
                         git(self.repo, 'worktree', 'remove', '--force', str(checkout), env=self.git_env)
             published = previous.get('publishedCommit') or ''
@@ -387,7 +397,9 @@ class Lab:
                 base = active_sha
         finished = [item for item in history if item['state'] != 'skipped']
         next_focus = finished[0].get('nextFocus', '') if finished else ''
-        topic, target, paper = TOPICS[len(finished) % len(TOPICS)]
+        last_target = finished[0].get('target', '') if finished else ''
+        last_index = next((i for i, row in enumerate(TOPICS) if row[1] == last_target), -1)
+        topic, target, paper = TOPICS[(last_index + 1) % len(TOPICS)]
         if (finished and finished[0]['state'] == 'failed'
                 and (len(finished) < 3 or finished[0]['topic'] != finished[2]['topic'])):
             last = finished[0]
@@ -434,7 +446,10 @@ class Lab:
             self.event(run, 'evidence', 'Related research from OpenAlex', '\n'.join(references))
         previous = [{'topic': r['topic'], 'state': r['state'],
                      'verified': r['verified']} for r in finished[:5]]
-        original = (checkout / target).read_text()
+        tree_entry = git(checkout, 'ls-tree', run['base'], '--', target, env=self.git_env).stdout
+        if not tree_entry.startswith(('100644 blob ', '100755 blob ')):
+            raise ValueError('Experiment target is not a tracked regular source file')
+        original = git(checkout, 'show', run['base'] + ':' + target, env=self.git_env).stdout
         index = git(checkout, 'ls-files', 'app', 'tests', 'maintenance', 'mission-control', 'whatsapp-bridge', 'improvement',
                     env=self.git_env).stdout
         brief = (f'Focus: {run["topic"]}\nPublic source path: {target}.\n'
@@ -484,7 +499,7 @@ class Lab:
                 if target.endswith('.py'):
                     compile(code, target, 'exec')
                 break
-            except (ValueError, SyntaxError) as exc:
+            except (ValueError, SyntaxError):
                 if attempt:
                     raise
                 self.event(run, 'check', 'Candidate construction retry',
@@ -495,7 +510,8 @@ class Lab:
         for name, text in files.items():
             if name.startswith(('app/', 'mission-control/', 'whatsapp-bridge/')):
                 live_file = LIVE_ROOT / name
-                if live_file.is_file() and live_file.suffix in {'.py', '.js', '.mjs', '.css', '.html'}:
+                if (live_file.is_file() and not live_file.is_symlink()
+                        and live_file.suffix in {'.py', '.js', '.mjs', '.css', '.html'}):
                     live_content = live_file.read_text()
                     if name == target:
                         live_matches_target = text == live_content
