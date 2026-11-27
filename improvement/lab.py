@@ -190,7 +190,11 @@ def candidate_source(original, proposal, regression_path):
         if not old or old == new or len(old) > 18_000 or len(new) > 22_000 or code.count(old) != 1:
             raise ValueError('Source edit has no unique anchor')
         code = code.replace(old, new, 1)
-    test = proposal['regression'].strip() + '\n'
+    test = proposal['regression'].strip()
+    fenced = re.fullmatch(r'```(?:python|py)?[ \t]*\n(.*?)\n```', test, re.DOTALL)
+    if fenced:
+        test = fenced.group(1).strip()
+    test += '\n'
     if (not 1 <= len(proposal['edits']) <= 8 or code == original or not 40 <= len(test) <= 22_000
             or 'unittest' not in test or 'def test_' not in test or SECRET.search(code + test)):
         raise ValueError('Candidate needs a bounded code change and a standalone unittest')
@@ -399,7 +403,8 @@ class Lab:
         finished = [item for item in history if item['state'] != 'skipped']
         next_focus = finished[0].get('nextFocus', '') if finished else ''
         priority = self.state / 'next-focus'
-        if priority.is_file():
+        forced_focus = priority.is_file()
+        if forced_focus:
             next_focus = priority.read_text().strip()
             priority.unlink()
         last_target = finished[0].get('target', '') if finished else ''
@@ -412,7 +417,7 @@ class Lab:
                                         (topic, target, paper))
         tracked = set(git(self.repo, 'ls-tree', '-r', '--name-only', base, env=self.git_env).stdout.splitlines())
         if (FOCUS.fullmatch(next_focus) and next_focus in tracked
-                and (not finished or next_focus != finished[0].get('target'))):
+                and (forced_focus or not finished or next_focus != finished[0].get('target'))):
             topic, target, paper = f'Improvement proposal for {next_focus}', next_focus, '2305.14325'
         identifier = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
         run = {'id': identifier, 'topic': topic, 'started': now(), 'state': 'running',
@@ -504,7 +509,7 @@ class Lab:
         patch_prompt = (brief + '\nChosen experiment:\n' + json.dumps(decision)
                         + '\nReturn up to eight exact, unique old/new substring replacements '
                         'for the selected file and a complete Python unittest module. Test real behavior. '
-                        'Copy anchors verbatim including whitespace. The module belongs under tests/. '
+                        'Copy anchors verbatim including whitespace. Return raw Python test source without markdown fences. '
                         + experiment_contract)
         for attempt in range(2):
             engineering_model, _, proposal = self.contribution('Engineering teammate', engineering_model,
