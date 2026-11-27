@@ -1,0 +1,105 @@
+{
+  "id": "20261127T070136817767Z",
+  "topic": "Improvement proposal for app/codex_rpc.py",
+  "started": "2026-11-27T07:01:36+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "app/codex_rpc.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-27T07:01:36+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Improvement proposal for app/codex_rpc.py\napp/codex_rpc.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/app/codex_rpc.py"
+    },
+    {
+      "at": "2026-11-27T07:01:37+00:00",
+      "kind": "evidence",
+      "title": "Improving Factuality and Reasoning through Multiagent Debate",
+      "body": "Independent proposals followed by cross-examination.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2305.14325"
+    },
+    {
+      "at": "2026-11-27T07:01:37+00:00",
+      "kind": "evidence",
+      "title": "Related research from OpenAlex",
+      "body": "Large Language Model-Based Agents for Software Engineering: A Survey (2026) https://doi.org/10.1145/3796507\nImproving Factuality and Reasoning in Language Models through Multiagent Debate (2024) https://doi.org/10.48550/arxiv.2305.14325\nSWE-Debate: Competitive Multi-Agent Debate for Software Issue Resolution (2026) https://doi.org/10.1145/3744916.3787810",
+      "actor": "Lab",
+      "model": "",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:01:45+00:00",
+      "kind": "proposal",
+      "title": "Reject malformed JSON-RPC lines without losing the next response",
+      "body": "In `app/codex_rpc.py`, `read()` removes a line from the buffer before parsing it. A malformed line therefore raises `JSONDecodeError` and aborts the current RPC, even if a valid response follows. Catch that parse error and continue reading the next line, optionally recording a bounded diagnostic. This preserves the existing protocol and defaults while making diagnostics more resilient to stray output.\nUse a deterministic fake stdout stream with a malformed line followed by a valid JSON-RPC response; assert `read()` returns the valid message. Also test that a stream containing only malformed lines still times out.\nRepeated malformed lines could consume time until the existing deadline. The proposal is falsified if the app-server contract guarantees every stdout line is valid JSON-RPC and cannot emit stray lines.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:01:57+00:00",
+      "kind": "proposal",
+      "title": "Clean up resources when initialization fails",
+      "body": "Wrap the constructor’s initialization handshake in exception-safe cleanup, then re-raise the original exception. Evidence: Popen and selector registration occur before call(\"initialize\"), which can raise; no constructor failure path closes either resource. Keep model defaults unchanged.\nUse deterministic fake process and selector objects; no subprocess or network. Make initialize return an RPC error and separately time out. Assert selector closure, process termination and wait, preservation of the original exception, and no initialized notification. Include a successful-handshake control.\nCleanup could mask the original failure or block; preserve that exception and retain bounded termination with kill fallback. The claim is falsified if the regression shows resources already reclaimed on these failure paths, or the proposed cleanup fails to reclaim them. This addresses resource lifetime, not diagnostic accuracy.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:02:09+00:00",
+      "kind": "proposal",
+      "title": "Clean up the subprocess if initialization fails",
+      "body": "Wrap the initialize call and initialized notification in a try/except in __init__. If either fails, close the selector, terminate and reap the subprocess, then re-raise the original exception. Currently, an initialization timeout or RPC error exits the constructor without calling close(), potentially leaving the subprocess running. Keep model defaults unchanged.\nUse a fake subprocess and selector with no network. Make initialization raise an RPC error, then assert that the selector is closed, the child is terminated and reaped, and the original error reaches the caller. The proposal is falsified if the existing implementation already satisfies those assertions or if the cleanup cannot preserve the original error.\nCleanup itself can fail or block; handle cleanup errors without masking the initialization failure, and retain the existing bounded wait before killing the child.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:02:23+00:00",
+      "kind": "critique",
+      "title": "Make RPC reads fail promptly when the app-server exits",
+      "body": "Of the proposals, constructor cleanup has the strongest source evidence: initialization can raise before callers obtain an object they can close. Ji An and the teammate offer the same fix, so they are corroboration, not independent alternatives; cleanup must preserve the original error if termination or reaping fails. The malformed-line proposal is weaker: the supplied source shows `json.loads` raises after consuming the line, but no evidence says valid app-server stdout may contain stray malformed lines. A more directly owner-visible gap is that `read()` checks for process exit only after selector readiness and a zero-byte read; after the child exits without closing stdout, a call can wait until timeout. Improve the read loop to detect a reaped child while waiting, and\nWith deterministic fake process and selector objects, have `select()` return no readable data while `poll()` reports an exit. Assert `read()` raises the exit error without waiting for its timeout. Include a control where the process remains alive and the stream later yields a valid response. This distinguishes prompt exit detection from the existing timeout behavior without a subprocess or network.\nSelector and process state can change between checks; retain EOF handling and the existing deadline so live but silent processes still time out. The proposal is falsified if the regression shows an exited child is already detected promptly when stdout remains open.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:02:38+00:00",
+      "kind": "critique",
+      "title": "Prefer exception-safe startup cleanup; retain strict parsing",
+      "body": "The two cleanup proposals describe the same source-supported defect: a failed handshake leaves no explicit cleanup path. This supports a resource-lifetime fix, but does not prove a persistent subprocess leak. Cover selector setup and the initialized send as well. Ji Eun correctly identifies parsing behavior, but provides no evidence that malformed stdout is recoverable noise; silently skipping it could conceal a protocol failure.\nUse deterministic fake process and selector objects, without subprocesses or network. Inject selector-registration failure, initialize RPC error, timeout, and initialized-send failure. Assert cleanup attempts, child reaping when cleanup succeeds, and preservation of the original exception. Inject selector-close failure and verify process cleanup still runs; simulate wait timeout and verify kill fallback. Include successful startup as a control. For parsing, compare strict failure against skipping on malformed input followed by a valid response; recovery alone does not establish that skipping is appropriate.\nCalling existing close() alone is insufficient: selector.close() can raise before process termination. Cleanup stages need independent best-effort handling without masking the startup error. Existing waits are not fully bounded: wait() after kill has no timeout. Keep live model defaults unchanged; no diagnostic-accuracy improvement is established.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:02:50+00:00",
+      "kind": "critique",
+      "title": "Clean up resources when initialization fails",
+      "body": "Support Ji An’s proposal, which covers the initialization handshake and includes stronger controls than the overlapping Engineering proposal. The constructor starts a subprocess and registers its stdout before initialization, but has no cleanup path if the handshake raises. A small exception handler should attempt to close the selector and terminate and reap the child, then re-raise the original exception. Ji Eun’s malformed-line proposal has weaker evidence: silently skipping invalid protocol output could hide a server defect, and no supplied evidence shows that stray lines are expected. Failing immediately is the simpler alternative.\nWith fake process and selector objects, make initialization raise an RPC error and, separately, a timeout. Assert selector closure, child termination and reaping, preservation of the original exception, and absence of the initialized notification. Include successful initialization and a failure while sending that notification. No network or subprocess is needed.\nCleanup can itself fail or wait; prevent cleanup errors from masking the original exception and retain a bounded wait with a kill fallback. The supplied source supports the failure-path claim, but no regression was executed.",
+      "actor": "Engineering teammate",
+      "model": "gpt-6.1-terra",
+      "url": ""
+    },
+    {
+      "at": "2026-11-27T07:02:58+00:00",
+      "kind": "decision",
+      "title": "Exception-safe Codex RPC startup",
+      "body": "The constructor starts the subprocess and registers its output before the initialization handshake, but has no cleanup path if setup or initialization fails. Try best-effort cleanup that preserves the original exception. The supplied source supports this failure-path gap; it does not establish a persistent leak.\nDeterministic fake process and selector: inject initialization error, timeout, and initialized-send failure. Assert cleanup attempts, child reaping when cleanup succeeds, and preservation of the original exception; include a successful-startup control. No test has run.\nCleanup steps can fail or block. Handle each independently so one failure does not prevent later cleanup or mask the startup error; retain the bounded wait and kill fallback.",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": ""
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-27T07:02:58+00:00",
+  "nextFocus": ""
+}
