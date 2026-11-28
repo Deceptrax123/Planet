@@ -2,7 +2,7 @@
   "id": "20261128T180003580260Z",
   "topic": "Improvement proposal for tests/test_assistant.py",
   "started": "2026-11-28T18:00:03+00:00",
-  "state": "running",
+  "state": "rejected",
   "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
   "target": "tests/test_assistant.py",
   "verified": false,
@@ -259,11 +259,86 @@
       "provider": "openai-codex",
       "disposition": "combined",
       "author": "Critic"
+    },
+    {
+      "at": "2026-11-28T18:02:51+00:00",
+      "kind": "github",
+      "title": "Debate recorded on Planet",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T180003580260Z",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:03:16+00:00",
+      "kind": "check",
+      "title": "Mutation control",
+      "body": "The new test failed on the control.\nRan 69 tests in 1.924s",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:03:23+00:00",
+      "kind": "candidate",
+      "title": "Detect an extra ambiguous-send attempt",
+      "body": "Isolated candidate c_f35d9e316df7680d70fe4553",
+      "actor": "Test reviewer",
+      "model": "gpt-6.1-terra",
+      "url": "https://github.com/Deceptrax123/Planet/commit/b6338518e349bd5f90052a1d6a70f67c42a0ae86",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:03:23+00:00",
+      "kind": "check",
+      "title": "Candidate regression suite passed",
+      "body": "Ran 69 tests in 1.876s\n# tests 32\n# pass 32\n# fail 0\nMAINTENANCE_CHECKS_PASSED",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:03:32+00:00",
+      "kind": "review",
+      "title": "Requested changes",
+      "body": "The regression checks one invocation of the failing sender and would detect an actual retry during the two ticks. However, the mutation only adds a direct sender call inside the existing test; it changes no scheduler behavior. Its detection therefore demonstrates sensitivity to test instrumentation, not a meaningful behavioral defect. Profiling also couples the regression to a local function’s name and location. Prefer a counting fake sender and assert one call alongside the existing ambiguous status and attempts assertions. Validate it against a temporary scheduler mutation that retries an ambiguous outbox entry on the second tick. No execution or independent verification performed.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "request_changes"
+    },
+    {
+      "at": "2026-11-28T18:03:40+00:00",
+      "kind": "review",
+      "title": "Requested changes",
+      "body": "The reported runs show mutation detection, but the mutation adds a direct call to the test stub, not a scheduler retry. The regression therefore detects test instrumentation changes rather than a meaningful violation of delivery behavior. Profiling also couples it to the nested function’s name and location. Instead, count sender calls in the existing test and assert exactly one after both ticks, retaining the outbox assertions. Validate against an intentional scheduler mutation that retries an ambiguous send on the second tick; keep that mutation unshipped. This provides a deterministic, network-free behavioral regression without changing live defaults.",
+      "actor": "Sol reviewer",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "request_changes"
+    },
+    {
+      "at": "2026-11-28T18:03:41+00:00",
+      "kind": "outcome",
+      "title": "Idea rejected",
+      "body": "A reviewer requested changes after the candidate passed its tests.",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": "",
+      "disposition": "rejected"
     }
   ],
-  "github": "",
-  "outcome": "",
-  "updated": "2026-11-28T18:02:46+00:00",
+  "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T180003580260Z",
+  "outcome": "A reviewer requested changes after the candidate passed its tests.",
+  "updated": "2026-11-28T18:03:41+00:00",
   "nextFocus": "tests/test_assistant.py",
-  "decision": "advanced"
+  "decision": "advanced",
+  "publishedCommit": "97de3a3f8df9090f25d358e67f42b92868a41965",
+  "candidateCommit": "b6338518e349bd5f90052a1d6a70f67c42a0ae86"
 }
