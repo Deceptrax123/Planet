@@ -1,0 +1,259 @@
+{
+  "id": "20261128T120002688543Z",
+  "topic": "Evaluation harnesses and measurable routing changes",
+  "started": "2026-11-28T12:00:02+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "app/assistant_mcp.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-28T12:00:02+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Evaluation harnesses and measurable routing changes\napp/assistant_mcp.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/app/assistant_mcp.py",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T12:00:04+00:00",
+      "kind": "evidence",
+      "title": "SWE-bench",
+      "body": "Measure engineering work with executable repository tests.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2310.06770",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T12:00:13+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-terra\ntest-auditor · gpt-6.1-sol\nschema-reviewer · gpt-6-luna",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:00:21+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-terra\nRegression · gpt-6-luna\nReviewer · gpt-6.1-sol",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:00:30+00:00",
+      "kind": "proposal",
+      "title": "Make MCP tool timeouts a deterministic routing contract",
+      "body": "Add an offline regression test for tools/call that replaces the broker request with a fake and checks that each research tool receives timeout=130, while a non-research tool uses the broker default. The supplied source already implements this routing; the change protects it from regressions without altering live defaults.\nCall handle with valid arguments for each research tool and one non-research tool, capture the fake broker’s calls, and assert the tool name, arguments, and timeout. Stub the emergency-stop path for research_submit so the test is deterministic and makes no network calls.\nThis proposal is falsified as an improvement if existing repository tests already cover the same routing contract, or if the configured MCP budget is not actually 130 seconds. The supplied material alone does not establish either point.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:00:39+00:00",
+      "kind": "proposal",
+      "title": "Return invalid tool arguments as MCP tool errors",
+      "body": "Change tools/call so schema-validation failures return the same isError content format used for broker ValueError failures. Currently _validate_schema runs before the try block, so invalid arguments become a JSON-RPC error instead. This creates two observable error formats for a single tool call.\nAdd an offline regression that calls handle with a known tool and invalid arguments, stubs request, and asserts isError is true, the error identifies the invalid field, and request was not called. Include a valid call as a control. This is a proposed test; it has not been executed.\nThe claim that this improves client recovery is unproven. It would be falsified by a representative client test showing that the changed response does not improve, or worsens, recovery from invalid arguments. Existing clients may depend on the current JSON-RPC error format.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:00:51+00:00",
+      "kind": "proposal",
+      "title": "Add a deterministic broker-routing regression",
+      "body": "Add one parameterized test to tests/test_assistant.py for handle(): research_probe with a synthetic host must call request(name, arguments, timeout=130); memory_context with a synthetic query must call request(name, arguments) without a timeout override. Patch assistant_mcp.request with a recording stub. Preserve live defaults. The supplied source supports this contract; existing test contents were not supplied, so coverage duplication is unknown.\nUse valid arguments and a stub returning a fixed JSON object. Assert exactly one broker call, exact arguments and keyword arguments, and the returned MCP text decoding to the stub result. Add an invalid-argument row asserting ValueError and zero broker calls. No network, subprocesses, or real broker access. These are proposed assertions, not executed results.\nThe claim is falsified if research_probe loses its 130-second timeout, memory_context gains that override, or invalid arguments reach the broker. Existing equivalent coverage would falsify the need for this addition. The supplied evidence does not justify changing production routing.",
+      "actor": "test-auditor",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:00:59+00:00",
+      "kind": "proposal",
+      "title": "Validate finite numeric arguments",
+      "body": "In `_validate_schema`, the `number` type rejects NaN and infinity, but `minimum`/`maximum` checks run for any `int` or `float`. A schema without `type: number` can therefore accept NaN because both comparisons are false. Gate numeric bounds on finite numeric values, or reject non-finite numbers before applying bounds. Add a deterministic regression using a schema with `minimum` but no `type`: NaN must raise `ValueError`.\nFalsified if the regression shows the current validator already rejects NaN for that schema, or if the change causes ordinary bounded integers and finite floats to fail validation.\nThe concrete edge case is schema-dependent: current public tool schemas pair bounds with numeric types, so it does not establish an exploitable issue in the listed tools. A regression should clarify the helper’s intended behavior without changing live tool defaults.",
+      "actor": "schema-reviewer",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:01:09+00:00",
+      "kind": "proposal",
+      "title": "Test MCP schema validation and broker routing deterministically",
+      "body": "Add offline tests for `_validate_schema` covering exact booleans/integers, finite numbers, enum and bounds, required fields, unknown fields, and nested arrays/objects. Assert valid arguments pass and invalid arguments raise `ValueError`. For routing, monkeypatch `assistant_mcp.request` and assert `research_*` calls receive `timeout=130`, while non-research calls receive no timeout override; also assert an unknown tool never reaches the broker. This gives executable regression checks without network access or changing live defaults.\nFalsifiable assertions: `True` is rejected as an integer; NaN and infinity are rejected as numbers; out-of-range values, missing required keys, and additional properties are rejected; valid nested values pass. Routing fails the regression if a research tool omits or changes the 130-second timeout, a non-research tool gets that override, or an unknown tool invokes the broker.\nTests may encode current routing policy too tightly; keep the timeout expectation tied to the supplied implementation and avoid tests that access the ESTOP path or real broker.",
+      "actor": "Regression",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:01:19+00:00",
+      "kind": "proposal",
+      "title": "Add a deterministic broker-routing regression test",
+      "body": "Add a table-driven test for every tool in TOOLS, replacing request with a recording stub and supplying schema-valid arguments. The source routes research_* calls with timeout=130 and all other calls without an explicit timeout. Assert this existing contract without changing routing or live model defaults.\nFor each tool, assert exactly one broker call with the declared name and unchanged arguments; assert timeout=130 for research_* and no timeout keyword otherwise. Stub the ESTOP existence check to false. Use no network. Falsify the regression claim by temporarily removing the research timeout or applying it to every tool: either mutation must fail the test.\nThis measures routing-contract preservation, not improved task success or latency. Existing test contents were not supplied, so check for equivalent coverage before adding it. No production behavior change is justified by the supplied evidence.",
+      "actor": "Reviewer",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:01:29+00:00",
+      "kind": "critique",
+      "title": "Prefer a targeted offline routing regression",
+      "body": "The supplied source supports the shared routing claim: research_* calls pass timeout=130, while other tools use the broker default. Ji Eun, test-auditor, and Reviewer propose variations of the same useful regression; a representative research and non-research pair is a smaller starting point than testing every tool. Check existing coverage before adding it. This protects an existing contract; it does not demonstrate improved task success or latency. The source comment asserts a 130-second MCP budget, but the supplied material does not independently verify that budget.\nWith request replaced by a recording fake, call handle with valid research_probe and memory_context arguments. Assert the exact broker calls, including timeout=130 only for research_probe, and verify the returned result. Also assert invalid arguments never reach the fake. As a decisive mutation check, removing the research timeout or applying it to the non-research call should fail the regression. No test was executed.\nJi An identifies a real difference in error formats, but client recovery benefits and compatibility are unproven; compare representative clients before changing the response. The schema-reviewer’s NaN case concerns an untyped numeric-bound schema absent from the listed tools, so it does not justify a production change on this evidence. Regression’s broader validator suite may be useful if coverage is missing, but its size is not evidence of owner-visible improvement.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:01:38+00:00",
+      "kind": "critique",
+      "title": "Prefer a targeted, offline routing regression",
+      "body": "Ji Eun, test-auditor, Regression, and Reviewer identify a supported contract: research tools pass timeout=130 to the broker, while other tools omit the override. Test-auditor’s two representative calls offer the clearest starting point; Reviewer’s all-tool table provides broader coverage but requires more fixtures and stubbing the emergency stop. Check existing tests for equivalent coverage before adding either. The supplied source alone does not establish that this change improves task success or latency.\nWith a recording fake for request, call research_probe and memory_context with valid arguments. Assert the exact broker calls and returned content, then verify invalid arguments never reach the broker. As a mutation check, removing the research timeout or applying it to both calls should fail. Run entirely offline. These tests are proposed, not executed.\nMy proposed error-format change establishes an observable inconsistency but gives no evidence of better client recovery; preserve current behavior unless a representative client test supports changing it. The schema-reviewer’s NaN case is real for an untyped bounded schema, but no supplied tool schema uses one, so a production fix is unsupported. Broad schema tests should be added only where existing coverage has meaningful gaps. The stated 130-second external budget remains unverified.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:01:50+00:00",
+      "kind": "critique",
+      "title": "Protect the existing broker-routing contract",
+      "body": "Prefer Reviewer’s all-tool table-driven regression; Ji Eun and test-auditor propose narrower versions of the same useful check. Preserve production behavior and model defaults. Existing test contents were not supplied, so coverage gaps cannot be confirmed. Ji An identifies inconsistent error handling but offers no client evidence that changing it helps. Schema-reviewer’s untyped-number case is outside current tool schemas. Regression’s broader validator suite is reasonable, but its incremental value depends on existing coverage.\nPropose an offline parameterized test with schema-valid arguments for every declared tool. Replace request with a recording stub and stub the emergency-stop existence check to false. Assert exactly one call, unchanged arguments, timeout=130 for research tools, no timeout keyword otherwise, and correctly serialized stub output. Add invalid-argument and unknown-tool cases asserting zero broker calls. Decisive evaluation: independently remove the research timeout and apply it to all tools; each mutation must fail the suite. No tests were executed.\nThis measures preservation of observable routing, not improved task success or latency. The source establishes a 130-second override but only comments on the configured budget; configuration was not supplied. Check existing coverage before adding tests. No production change is justified by the available evidence.",
+      "actor": "test-auditor",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:02:00+00:00",
+      "kind": "critique",
+      "title": "Test JSON booleans and non-finite numeric inputs against tool schemas",
+      "body": "The concrete edge case worth evaluating is Python’s equality semantics: `_validate_schema` checks enums with `value not in schema[\"enum\"]`, so `True` can match enum value `1`. Current tool enums shown here are strings, so this is a helper-level robustness gap, not evidence of a faulty live tool. Ji Eun’s timeout proposal merely locks in existing routing; Ji An’s response-format change has no evidence of client benefit and changes observable behavior. The timeout proposals also overlap, while the broad suite proposal adds coverage without establishing a specific uncovered defect. The schema-reviewer proposal is also weak as stated: current number bounds are paired with numeric types, and bounds without a type may intentionally allow any comparable value.\nAdd a focused, offline `_validate_schema` regression with `{\"enum\": [1]}`: `1` should pass and `True` should fail if enum values are intended to be type-strict. Include a control for existing string enums and bounded finite numbers. This is decisive for the edge case and requires no broker or network. Inspect existing tests before adding it; supplied material does not show their coverage.\nThe source alone does not establish that enum matching should be type-strict, nor that any current tool schema is affected. Treat this as an evaluation proposal, not a production change, until the schema contract is confirmed. Preserve current timeout routing and error formats absent client or budget evidence.",
+      "actor": "schema-reviewer",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:02:12+00:00",
+      "kind": "critique",
+      "title": "Test MCP validation and routing offline",
+      "body": "The strongest evidence supports tests that lock down behavior already explicit in app/assistant_mcp.py, without changing production routing. Ji Eun’s and the auditor’s timeout proposals are narrow versions of this; the auditor’s invalid-argument assertion duplicates the broader schema proposal. The all-tools proposal is thorough but risks brittle fixtures and does not measure task success. Ji An proposes changing the error format, but the source alone does not show that clients recover better or that the current JSON-RPC error is wrong. The NaN concern is valid for schemas with bounds but no numeric type; listed public tool schemas pair bounds with numeric types, so it is a generic helper edge case rather than demonstrated tool failure.\nAdd deterministic tests for `_validate_schema`: `True` fails `integer`; NaN and infinity fail `number`; bounds, enum, required fields, `additionalProperties: false`, and nested values are enforced. For routing, patch `assistant_mcp.request` with a recording stub and call `handle` with valid `research_probe` and `memory_context` arguments. Assert one call with unchanged name and arguments; research gets `timeout=130`, while memory has no timeout keyword. Assert invalid arguments and unknown tools never call the broker. No network or subprocesses. These claims are falsified if the current implementation violates an assertion or existing tests already cover it.\nThis tests preservation of the supplied contract, not improved routing quality or client recovery. Repository test contents and the operational basis for the 130-second budget were not supplied, so coverage duplication and budget appropriateness remain unverified. Avoid a table-driven test for every tool unless fixtures can be maintained reliably; do not change live defaults based on this evidence.",
+      "actor": "Regression",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:02:24+00:00",
+      "kind": "critique",
+      "title": "Prefer offline routing regressions; defer unsupported behavior changes",
+      "body": "Ji Eun, test-auditor, Regression, and Reviewer identify a source-supported contract: research_* calls receive timeout=130; other tools retain broker defaults. Consolidate their overlapping proposals, checking existing coverage first. Testing every declared tool is stronger than two representative cases. The source comment alone does not independently verify the configured MCP budget. Ji An correctly identifies differing error paths, but uniform formatting does not establish better client recovery; retain current behavior pending protocol and client evidence. schema-reviewer identifies a helper edge case, but no listed tool exposes that schema: defer production changes. Regression’s validation cases are useful where existing coverage is absent. Preserve live model defaul\nPropose one offline table-driven test covering every declared tool with valid synthetic arguments, a recording request stub, and the ESTOP check stubbed false. Assert exactly one call, unchanged arguments, exact timeout keywords, and decoded response content. Invalid arguments and unknown tools must never reach the broker. Removing the research timeout or applying it globally must make the test fail. No tests were executed.\nThese tests measure contract preservation, not improved task success or latency. Existing tests were not supplied, so incremental coverage is unverified. Error-format changes need a representative client regression; generic numeric validation changes need an established helper contract.",
+      "actor": "Reviewer",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:02:36+00:00",
+      "kind": "decision",
+      "title": "Evaluate an offline MCP broker-routing regression",
+      "body": "Proceed with a small harness experiment covering representative research and non-research calls. First check existing public tests for equivalent coverage. The supplied source supports the routing contract, but does not establish an improvement in task success or latency.\nReplace request with a recording fake. Call handle with valid research_probe and memory_context arguments; assert unchanged arguments, timeout=130 only for research_probe, and the decoded response. Assert invalid arguments do not reach the broker. As broken controls, independently remove the research timeout and apply it to the non-research call; each mutation should fail. Run offline. No test has run.\nExisting tests may already cover this contract. The source comment does not independently establish that 130 seconds matches the configured MCP budget. This experiment preserves existing behavior and live defaults.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "advanced"
+    },
+    {
+      "at": "2026-11-28T12:02:37+00:00",
+      "kind": "idea",
+      "title": "Make MCP tool timeouts a deterministic routing contract",
+      "body": "The targeted routing regression has a clear falsifiable control and limited fixture overhead.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "selected",
+      "author": "Ji Eun"
+    },
+    {
+      "at": "2026-11-28T12:02:37+00:00",
+      "kind": "idea",
+      "title": "Return invalid tool arguments as MCP tool errors",
+      "body": "The error-format difference is observable, but client recovery and compatibility benefits are unproven.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "Ji An"
+    },
+    {
+      "at": "2026-11-28T12:02:38+00:00",
+      "kind": "idea",
+      "title": "Add a deterministic broker-routing regression",
+      "body": "Its recording fake, response assertion, and invalid-argument check strengthen the selected experiment.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "test-auditor"
+    },
+    {
+      "at": "2026-11-28T12:02:38+00:00",
+      "kind": "idea",
+      "title": "Validate finite numeric arguments",
+      "body": "The proposed numeric and enum edge cases lack evidence of an affected current tool schema or an established helper contract.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "schema-reviewer"
+    },
+    {
+      "at": "2026-11-28T12:02:39+00:00",
+      "kind": "idea",
+      "title": "Test MCP schema validation and broker routing deterministically",
+      "body": "The broader validation suite may help if inspection reveals gaps, but its incremental value is unknown.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "Regression"
+    },
+    {
+      "at": "2026-11-28T12:02:40+00:00",
+      "kind": "idea",
+      "title": "Add a deterministic broker-routing regression test",
+      "body": "Its broken-control evaluation is useful; the all-tool table is deferred unless existing coverage or a specific gap warrants it.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Reviewer"
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-28T12:02:40+00:00",
+  "nextFocus": "tests/test_assistant.py",
+  "decision": "advanced"
+}
