@@ -2,10 +2,10 @@
   "id": "20261128T060007486491Z",
   "topic": "Reliable WhatsApp delivery",
   "started": "2026-11-28T06:00:07+00:00",
-  "state": "running",
+  "state": "complete",
   "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
   "target": "app/whatsapp_delivery.py",
-  "verified": false,
+  "verified": true,
   "events": [
     {
       "at": "2026-11-28T06:00:07+00:00",
@@ -195,11 +195,75 @@
       "provider": "openai-codex",
       "disposition": "selected",
       "author": "regression"
+    },
+    {
+      "at": "2026-11-28T06:02:27+00:00",
+      "kind": "github",
+      "title": "Debate recorded on Planet",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T060007486491Z",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T06:03:14+00:00",
+      "kind": "check",
+      "title": "Baseline regression control",
+      "body": "The new test failed on the control.\nRan 77 tests in 1.940s",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T06:03:20+00:00",
+      "kind": "candidate",
+      "title": "Validate WhatsApp JSON object shapes without retrying sends",
+      "body": "Isolated candidate c_14d8e136235d33724b4375cd",
+      "actor": "regression",
+      "model": "gpt-6.1-sol",
+      "url": "https://github.com/Deceptrax123/Planet/commit/8c02114f304855c969448dc3c2870ca7a6dd4b59",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T06:03:21+00:00",
+      "kind": "check",
+      "title": "Candidate regression suite passed",
+      "body": "Ran 77 tests in 1.935s\n# tests 32\n# pass 32\n# fail 0\nMAINTENANCE_CHECKS_PASSED",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T06:03:29+00:00",
+      "kind": "review",
+      "title": "Approved",
+      "body": "The change correctly handles non-object JSON while preserving delivery safety: malformed configuration or health prevents POST, and malformed acknowledgements require reconciliation after one POST. Status checks return defined states instead of leaking AttributeError. The deterministic, network-free regression meaningfully checks exception classification, request counts and ordering, payload preservation, and success/session/disabled controls. Some configuration cases already passed because TypeError was caught, but the remaining cases expose real failures in the original code. Assessment is based on the supplied code and tests; no tools were run.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "approve"
+    },
+    {
+      "at": "2026-11-28T06:03:38+00:00",
+      "kind": "review",
+      "title": "Approved",
+      "body": "The guards correctly classify non-object JSON: configuration and health failures prevent POSTs, while malformed acknowledgements require reconciliation after sending. Status now returns defined fallback states instead of raising AttributeError. The deterministic, network-free regression checks exception classification, request counts and methods, payload preservation, and valid/disabled/wrong-session controls. This meaningfully tests the change without altering delivery defaults. Test-run results are supplied, not independently verified.",
+      "actor": "Sol reviewer",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "approve"
     }
   ],
-  "github": "",
-  "outcome": "",
-  "updated": "2026-11-28T06:02:23+00:00",
+  "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T060007486491Z",
+  "outcome": "The original failed the new regression, the candidate passed, and both reviewers approved.",
+  "updated": "2026-11-28T06:03:38+00:00",
   "nextFocus": "app/whatsapp_delivery.py",
-  "decision": "advanced"
+  "decision": "advanced",
+  "publishedCommit": "14c9dee237c8f37b5593e83660fb5dedeedbdd0f",
+  "candidateCommit": "8c02114f304855c969448dc3c2870ca7a6dd4b59"
 }
