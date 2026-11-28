@@ -353,13 +353,35 @@
       "url": "",
       "provider": "openai-codex",
       "verdict": "approve"
+    },
+    {
+      "at": "2026-11-28T00:05:09+00:00",
+      "kind": "release",
+      "title": "Release queued",
+      "body": "The broker waits for both gateways to be idle.",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T00:15:10+00:00",
+      "kind": "release",
+      "title": "Release state: failed",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
     }
   ],
   "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T000001291847Z",
   "outcome": "The original failed the new regression, the candidate passed, and both reviewers approved.",
-  "updated": "2026-11-28T00:05:05+00:00",
+  "updated": "2026-11-28T00:15:10+00:00",
   "nextFocus": "app/reminder_scheduler.py",
   "decision": "advanced",
-  "publishedCommit": "caaf76d73edab0fb6ea02cfc0009a753ba962b7d",
-  "candidateCommit": "e80259734e9e3491aaa5e1a62a5e5915013bd050"
+  "publishedCommit": "50a8a1213dbfc554cd87642a2405952f6c23dc35",
+  "candidateCommit": "e80259734e9e3491aaa5e1a62a5e5915013bd050",
+  "releaseCandidate": "c_870d4d9010955a22e8b6ab50",
+  "releaseState": "failed"
 }
