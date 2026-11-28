@@ -119,6 +119,14 @@ class Scheduler:
                         db.execute("UPDATE outbox SET status='cancelled',last_error='Proactive alert expired before eligible delivery' WHERE id=? AND status IN ('pending','retry')", (item["id"],))
                         continue
             with self.store.connect() as db:
+                db.execute("BEGIN IMMEDIATE")
+                if item["reminder_id"]:
+                    reminder = db.execute("SELECT allow_quiet FROM reminders WHERE id=?", (item["reminder_id"],)).fetchone()
+                    if reminder:
+                        end = quiet_end(when, reminder["allow_quiet"])
+                        if end > when:
+                            db.execute("UPDATE outbox SET due_at=? WHERE id=? AND status IN ('pending','retry')", (end.isoformat(), item["id"]))
+                            continue
                 claimed = db.execute("UPDATE outbox SET status='sending',attempts=attempts+1 WHERE id=? AND status IN ('pending','retry')", (item["id"],)).rowcount
             if not claimed:
                 continue
