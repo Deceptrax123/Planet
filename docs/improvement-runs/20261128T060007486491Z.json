@@ -257,13 +257,35 @@
       "url": "",
       "provider": "openai-codex",
       "verdict": "approve"
+    },
+    {
+      "at": "2026-11-28T06:03:42+00:00",
+      "kind": "release",
+      "title": "Release queued",
+      "body": "The broker waits for both gateways to be idle.",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T06:13:43+00:00",
+      "kind": "release",
+      "title": "Release state: failed",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
     }
   ],
   "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T060007486491Z",
   "outcome": "The original failed the new regression, the candidate passed, and both reviewers approved.",
-  "updated": "2026-11-28T06:03:38+00:00",
+  "updated": "2026-11-28T06:13:43+00:00",
   "nextFocus": "app/whatsapp_delivery.py",
   "decision": "advanced",
-  "publishedCommit": "14c9dee237c8f37b5593e83660fb5dedeedbdd0f",
-  "candidateCommit": "8c02114f304855c969448dc3c2870ca7a6dd4b59"
+  "publishedCommit": "e3f474c22da82c54fcc81790187aabe2bf0fc0c2",
+  "candidateCommit": "8c02114f304855c969448dc3c2870ca7a6dd4b59",
+  "releaseCandidate": "c_14d8e136235d33724b4375cd",
+  "releaseState": "failed"
 }
