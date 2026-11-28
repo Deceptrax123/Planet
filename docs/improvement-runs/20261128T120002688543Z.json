@@ -2,10 +2,10 @@
   "id": "20261128T120002688543Z",
   "topic": "Evaluation harnesses and measurable routing changes",
   "started": "2026-11-28T12:00:02+00:00",
-  "state": "running",
+  "state": "complete",
   "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
   "target": "app/assistant_mcp.py",
-  "verified": false,
+  "verified": true,
   "events": [
     {
       "at": "2026-11-28T12:00:02+00:00",
@@ -249,11 +249,75 @@
       "provider": "openai-codex",
       "disposition": "combined",
       "author": "Reviewer"
+    },
+    {
+      "at": "2026-11-28T12:02:45+00:00",
+      "kind": "github",
+      "title": "Debate recorded on Planet",
+      "body": "",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T120002688543Z",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T12:03:11+00:00",
+      "kind": "check",
+      "title": "Mutation control",
+      "body": "The new test failed on the control.\nRan 70 tests in 1.505s",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T12:03:19+00:00",
+      "kind": "candidate",
+      "title": "Offline MCP routing regression; timeout removal as failed control",
+      "body": "Isolated candidate c_6d181ea2371649c9a4ece997",
+      "actor": "test-auditor",
+      "model": "gpt-6.1-sol",
+      "url": "https://github.com/Deceptrax123/Planet/commit/acc77d31df81146bf40ccd2237d33507679593c7",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T12:03:19+00:00",
+      "kind": "check",
+      "title": "Candidate regression suite passed",
+      "body": "Ran 70 tests in 1.477s\n# tests 32\n# pass 32\n# fail 0\nMAINTENANCE_CHECKS_PASSED",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T12:03:28+00:00",
+      "kind": "review",
+      "title": "Approved",
+      "body": "The regression guards existing routing: research_probe receives timeout=130, memory_context retains broker defaults, arguments remain unchanged, responses round-trip correctly, and invalid inputs never reach the broker. Removing the timeout deterministically fails the research_probe call assertion, detecting a meaningful loss of the documented research timeout budget. Dependency stubbing keeps the tests offline. Coverage is representative rather than exhaustive across research tools. Assessment uses the supplied code and reported test outcomes; no tools were run.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "approve"
+    },
+    {
+      "at": "2026-11-28T12:03:36+00:00",
+      "kind": "review",
+      "title": "Approved",
+      "body": "The regression guards existing routing: research_probe receives timeout=130, while memory_context retains the broker default. The mutation meaningfully removes that timeout override and fails the exact call assertion. Tests also verify argument preservation, JSON response round-tripping, and rejection of invalid arguments before broker access, without network calls. Coverage demonstrates representative routing behavior, not actual timeout duration or every research tool.",
+      "actor": "Sol reviewer",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "verdict": "approve"
     }
   ],
-  "github": "",
-  "outcome": "",
-  "updated": "2026-11-28T12:02:40+00:00",
+  "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T120002688543Z",
+  "outcome": "The harness detected the intentional mutation, passed on the original, and both reviewers approved.",
+  "updated": "2026-11-28T12:03:36+00:00",
   "nextFocus": "tests/test_assistant.py",
-  "decision": "advanced"
+  "decision": "advanced",
+  "publishedCommit": "bcc6d1cf71dec31dadd27533ef43b1046883ece9",
+  "candidateCommit": "acc77d31df81146bf40ccd2237d33507679593c7"
 }
