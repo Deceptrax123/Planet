@@ -1,0 +1,269 @@
+{
+  "id": "20261128T180003580260Z",
+  "topic": "Improvement proposal for tests/test_assistant.py",
+  "started": "2026-11-28T18:00:03+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "tests/test_assistant.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-28T18:00:03+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Improvement proposal for tests/test_assistant.py\ntests/test_assistant.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/tests/test_assistant.py",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:00:05+00:00",
+      "kind": "evidence",
+      "title": "Improving Factuality and Reasoning through Multiagent Debate",
+      "body": "Independent proposals followed by cross-examination.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2305.14325",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:00:06+00:00",
+      "kind": "evidence",
+      "title": "Related research from OpenAlex",
+      "body": "Improving Factuality and Reasoning in Language Models through Multiagent Debate (2024) https://doi.org/10.48550/arxiv.2305.14325\nLarge Language Model-Based Agents for Software Engineering: A Survey (2026) https://doi.org/10.1145/3796507\nSWE-Debate: Competitive Multi-Agent Debate for Software Issue Resolution (2026) https://doi.org/10.1145/3744916.3787810",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T18:00:14+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-sol\nTest reviewer · gpt-6.1-terra\nBehavior reviewer · gpt-6-astra",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:00:23+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-sol\nProbe · gpt-6-luna\nCritic · gpt-6.1-terra",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:00:31+00:00",
+      "kind": "proposal",
+      "title": "Bound MCP discovery test runtime",
+      "body": "Ji Eun: Add timeout=10 to subprocess.run in ProtocolTests.test_mcp_handshake_and_discovery_do_not_require_credentials. The supplied test currently waits indefinitely if assistant_mcp.py stalls. A timeout turns that stall into a bounded, visible test failure without changing live model defaults.\nAdd a deterministic, offline regression using a mocked subprocess.run that raises subprocess.TimeoutExpired; verify the handshake test passes timeout=10 and propagates the failure. No code was executed.\nSlow CI startup could exceed 10 seconds. The proposal is falsified if credential-free discovery legitimately requires longer on supported CI, or if the regression does not fail when the timeout argument is removed.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:00:46+00:00",
+      "kind": "proposal",
+      "title": "Test memory expiration at the exact boundary",
+      "body": "Ji An: Add one StoreTests case defining valid_until as exclusive. Existing coverage queries a full day after expiration, so it cannot distinguish exclusive from inclusive expiration. This is a proposed contract; the supplied source does not establish current implementation behavior.\nCreate a fact valid until 2026-02-01T00:00:00Z. Recall with identical text at one microsecond before, exactly at, and one microsecond after that timestamp. Assert the fact ID is present only before expiration. Use the existing temporary Store and explicit timestamps; no network or model calls.\nConfirm that exclusive expiration is the intended contract. Falsification: if an inclusive-boundary implementation also passes, the regression fails to discriminate the claimed defect. If current code already passes, this adds coverage rather than demonstrating a production bug.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:00:53+00:00",
+      "kind": "proposal",
+      "title": "Test the expiration boundary of a stored restriction",
+      "body": "The existing expiration test checks recall one day after valid_until, but does not establish what happens at the boundary. Add a regression that stores a restriction ending at 2026-02-01T00:00:00Z and checks recall immediately before and exactly at that time.\nUsing the existing StoreTests fixture, assert that the fact is present at 2026-01-31T23:59:59Z and absent at 2026-02-01T00:00:00Z. The test uses fixed timestamps and requires no network.\nThis proposal assumes valid_until is exclusive; the supplied test does not establish that contract. The proposed expectation is falsified if the documented or intended contract treats valid_until as inclusive. Production behavior was not inspected or executed.",
+      "actor": "Test reviewer",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:11+00:00",
+      "kind": "proposal",
+      "title": "Assert actual send calls after an ambiguous failure",
+      "body": "In tests/test_assistant.py, strengthen test_ambiguous_transport_failure_is_not_blindly_retried: record each invocation of the failing sender and assert exactly one invocation after both ticks. Currently, the test checks persisted status and attempts; those assertions could pass even if a second transport call occurred without updating bookkeeping. Only supplied test source supports this proposal; no implementation defect is established. Independent proposals and cross-examination are relevant as a review method, not evidence that this defect exists.\nUse a local list in the existing fail stub, append before raising TimeoutError, and assert len(calls) == 1 after the two existing fixed-time ticks. Retain the status and attempts assertions. Falsify the claimed coverage improvement by showing that an extra sender invocation necessarily fails the existing assertions, or that the strengthened test still passes when a duplicate invocation is introduced. No network or model calls are needed; tests were not executed.\nLow: test-only change with no live model default changes. It covers the existing two-tick scenario, not restart or concurrent-worker behavior.",
+      "actor": "Behavior reviewer",
+      "model": "gpt-6-astra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:19+00:00",
+      "kind": "proposal",
+      "title": "Add a deterministic reminder quiet-hours boundary test",
+      "body": "In `ReminderTests`, add a test for a reminder due exactly when quiet hours end. The existing cancellation test covers a reminder deferred during quiet hours, but does not verify the boundary. Assert it is not sent just before `quiet_end(...)` and is sent at the boundary. Use the fixed `self.when` and the scheduler’s quiet-hours helper so the regression requires no network and leaves live model defaults untouched.\nThe proposal is falsified if the scheduler does not defer delivery before the calculated quiet-hours end, or fails to deliver at that exact time. The supplied test file alone does not establish whether `tick` treats that endpoint as inclusive, so check the scheduler implementation before choosing the expected boundary behavior.\nThe implementation of `quiet_end` and `Scheduler.tick` is not included in the supplied source; the boundary expectation cannot be confirmed from this excerpt alone.",
+      "actor": "Probe",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:27+00:00",
+      "kind": "proposal",
+      "title": "Test the expiry boundary for remembered facts",
+      "body": "Add a deterministic test that stores a fact with valid_until=\"2026-02-01T00:00:00Z\", then recalls it immediately before and exactly at that timestamp. Assert that the fact is present before expiry and absent at expiry. The existing test checks only the following day, so it cannot detect an inclusive-end boundary regression.\nUse the existing temporary Store fixture and explicit UTC timestamps; no network or live model is needed.\nThis proposal assumes valid_until is intended to be exclusive. It would be falsified by a documented inclusive-end contract, or by a requirement that expiry is evaluated at a coarser resolution. The supplied test alone does not establish that boundary semantics.",
+      "actor": "Critic",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:37+00:00",
+      "kind": "critique",
+      "title": "Prioritize direct evidence of duplicate-send prevention",
+      "body": "Ji Eun: Prefer Behavior reviewer’s call-count assertion. The existing ambiguous-failure test checks database bookkeeping but never counts transport invocations, leaving an observable coverage gap. Retain those assertions and add a call count. My timeout proposal bounds a visibly unbounded subprocess, but mocking subprocess.run mainly checks argument forwarding. The three expiration proposals duplicate one another and assume an unestablished exclusive-end contract. Probe’s quiet-hours proposal also needs a confirmed boundary contract; deriving expectations from quiet_end risks sharing the implementation’s error.\nRecord each failing sender invocation before raising TimeoutError. After the two existing fixed-time ticks, assert exactly one invocation, status='ambiguous', and attempts=1. Decisive check: deliberately introduce a second sender invocation without changing bookkeeping; the strengthened test must fail. This is deterministic and offline. No tests were executed.\nNo production defect is established from the supplied test source. This test-only improvement covers two ticks, not restart or concurrency. Keep live model defaults unchanged; debate literature supplies a review method, not evidence of correctness.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:47+00:00",
+      "kind": "critique",
+      "title": "Prefer direct observation of ambiguous-send retries",
+      "body": "Ji An: The Behavior reviewer’s proposal has the strongest support: record failing sender invocations and assert exactly one after both ticks, retaining status and attempts checks. It tests the existing no-blind-retry contract directly. My expiration proposal and its duplicates assume exclusive expiry without establishing that contract. Probe likewise needs independent quiet-hours semantics; deriving expectations from quiet_end risks sharing its defect. Ji Eun bounds hangs, but 10 seconds lacks supporting evidence, and mocking subprocess.run verifies argument forwarding rather than actual termination.\nAppend each invocation to a local list before raising TimeoutError; assert one invocation after the existing fixed-time ticks. Decisive challenge: introduce a second transport invocation without changing persisted attempts or status. The strengthened test must fail. Use only the temporary Store and local stub; no network. No tests were executed.\nNo implementation defect is established from the supplied source. The extra-call scenario may already fail existing assertions depending on implementation. Coverage remains limited to two ticks in one process; expiration and quiet-hours boundary proposals require a confirmed contract.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:01:56+00:00",
+      "kind": "critique",
+      "title": "Assert the sender is called only once after an ambiguous failure",
+      "body": "Strengthen test_ambiguous_transport_failure_is_not_blindly_retried by recording calls to the failing sender. The existing test asserts persisted status and attempt count, but does not directly assert the behavior named by the test: that no second send is attempted. The supplied source establishes a coverage gap, not an implementation defect.\nAppend to a local calls list in the fail stub before it raises TimeoutError. After the two existing fixed-time ticks, assert len(calls) == 1 and retain the status and attempts assertions. A decisive check is that a mutation introducing a second sender call fails the strengthened test. No network is needed; no code was executed.\nThis covers only the existing two-tick scenario, not recovery or concurrent workers. The expiry proposals identify a real boundary gap but assume an exclusive valid_until contract that the supplied source does not establish. The quiet-hours proposal likewise needs an established endpoint contract and an independent expected time, rather than relying solely on the helper under test. Ji Eun’s timeout could bound a stalled test, but mocking subprocess.run to check its argument provides weaker behavioral evidence than exercising a controlled stalled process. The literature leads do not establish any of these code-level claims.",
+      "actor": "Test reviewer",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:02:11+00:00",
+      "kind": "critique",
+      "title": "Observe transport calls directly after ambiguous failure",
+      "body": "Prefer strengthening the existing ambiguous-failure test: record calls in the failing sender and assert exactly one after both ticks, retaining status and attempts assertions. This directly tests the behavior named by the test; no implementation defect is established. The three expiration proposals overlap and assume an unconfirmed exclusive-end contract. The timeout proposal bounds hangs, but its mocked regression mainly checks argument forwarding. The quiet-hours proposal needs a confirmed boundary contract and a reminder already due before that boundary; otherwise non-delivery may simply reflect its due time. Independent proposals and cross-examination help expose these assumptions; the supplied literature metadata does not validate any change.\nAppend to a local calls list before the sender raises TimeoutError. After the two existing fixed-time ticks, assert len(calls) == 1. Decisive check: a duplicate sender invocation with unchanged outbox bookkeeping must fail the new assertion while preserving the existing assertions. Uses the temporary Store and local stub, with no network. Not executed.\nLow-risk test-only proposal; live model defaults remain unchanged. Only test source was supplied, so implementation behavior and mutation results remain unverified. Coverage is limited to two ticks, excluding restart and concurrency.",
+      "actor": "Behavior reviewer",
+      "model": "gpt-6-astra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:02:19+00:00",
+      "kind": "critique",
+      "title": "Assert one send attempt after ambiguous failure",
+      "body": "Strengthen `test_ambiguous_transport_failure_is_not_blindly_retried` by counting calls to its failing sender. The supplied test already checks outbox status and attempt count across two ticks, but does not directly assert that the transport was called only once.\nHave the local failing stub append each invocation to a list before raising `TimeoutError`; after both fixed-time ticks, assert the list has length one and retain the existing status and attempts assertions. This is deterministic and uses no network.\nThis only covers the existing two-tick scenario; it does not test restart or concurrent-worker behavior. Evidence is limited to the supplied test: the proposed assertion adds a direct check, but no implementation defect is established.",
+      "actor": "Probe",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:02:28+00:00",
+      "kind": "critique",
+      "title": "Strengthen the ambiguous-send regression",
+      "body": "Recommend the Behavior reviewer’s proposal: count calls to the failing sender and assert exactly one call after both ticks, while retaining the outbox status and attempts assertions. The existing test states that ambiguous failures must not be blindly retried, but observes only persisted bookkeeping, not transport calls. This is a coverage gap, not evidence of an implementation defect. The expiry proposals identify a real boundary gap but assume an exclusive valid_until contract that the supplied source does not establish. The quiet-hours proposal similarly assumes boundary behavior and risks using the implementation helper as its own oracle. The subprocess timeout would bound hangs, but 10 seconds is unsupported; mocking subprocess.run to check its argument would mainl\nAppend to a local calls list in the existing failing sender stub before raising TimeoutError; after the two fixed-time ticks, assert len(calls) == 1. As a decisive mutation check, introduce a second sender invocation without changing persisted attempts and confirm the strengthened assertion fails. The test is deterministic and offline; it was not executed.\nThe added assertion covers this two-tick scenario only, not recovery after restart or concurrent workers. No supplied evidence establishes that the current implementation makes a duplicate call.",
+      "actor": "Critic",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T18:02:43+00:00",
+      "kind": "decision",
+      "title": "Directly count ambiguous-send attempts",
+      "body": "Strengthen the existing ambiguous-failure test with a sender call count while retaining status and attempts assertions. The supplied source supports a test improvement, not a demonstrated behavior defect.\nAppend each invocation to a local calls list before raising TimeoutError. After both existing fixed-time ticks, assert len(calls) == 1, status == 'ambiguous', and attempts == 1. In isolation, introduce an extra sender invocation without changing bookkeeping: the new assertion must fail while the existing assertions pass. Deterministic and offline; not executed.\nCoverage is limited to two ticks in one process. The implementation and broken control remain unverified. Live model defaults stay unchanged.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "advanced"
+    },
+    {
+      "at": "2026-11-28T18:02:43+00:00",
+      "kind": "idea",
+      "title": "Bound MCP discovery test runtime",
+      "body": "Accept the revised call-count recommendation; defer the original timeout proposal because its threshold lacks evidence and its mocked check mainly verifies argument forwarding.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Ji Eun"
+    },
+    {
+      "at": "2026-11-28T18:02:44+00:00",
+      "kind": "idea",
+      "title": "Test memory expiration at the exact boundary",
+      "body": "Accept the revised direct-observation recommendation; defer expiration coverage until the endpoint contract is established.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Ji An"
+    },
+    {
+      "at": "2026-11-28T18:02:44+00:00",
+      "kind": "idea",
+      "title": "Test the expiration boundary of a stored restriction",
+      "body": "The revised call-count proposal reinforces the selected experiment; the original expiry proposal assumes exclusive expiration.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Test reviewer"
+    },
+    {
+      "at": "2026-11-28T18:02:45+00:00",
+      "kind": "idea",
+      "title": "Assert actual send calls after an ambiguous failure",
+      "body": "Proposes a small, direct assertion of the existing no-blind-retry expectation and a specific broken control.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "selected",
+      "author": "Behavior reviewer"
+    },
+    {
+      "at": "2026-11-28T18:02:46+00:00",
+      "kind": "idea",
+      "title": "Add a deterministic reminder quiet-hours boundary test",
+      "body": "Accept the revised call-count proposal; defer quiet-hours boundary coverage pending independently established semantics.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Probe"
+    },
+    {
+      "at": "2026-11-28T18:02:46+00:00",
+      "kind": "idea",
+      "title": "Test the expiry boundary for remembered facts",
+      "body": "Supports the same experiment and correctly limits the claim to coverage rather than an established production defect.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Critic"
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-28T18:02:46+00:00",
+  "nextFocus": "tests/test_assistant.py",
+  "decision": "advanced"
+}
