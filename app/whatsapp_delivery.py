@@ -25,12 +25,16 @@ class WhatsApp:
     def send(self, text, nonce, image_url=None):
         try:
             config = json.loads(self.config.read_text())
+            if not isinstance(config, dict):
+                raise ValueError('Invalid WhatsApp configuration')
             jid = config['owner_jid']
             if not config.get('enabled') or not re.fullmatch(r'[1-9][0-9]{6,14}@s\.whatsapp\.net', jid):
                 raise ValueError('Invalid owner routing')
             # Never adopt a different profile/account's bridge on this port.
             with urllib.request.urlopen(BASE+'/health', timeout=5) as response:
                 health = json.load(response)
+            if not isinstance(health, dict):
+                raise ValueError('Invalid WhatsApp health response')
             if health.get('status') != 'connected' or health.get('session') != SESSION:
                 raise ValueError('Expected WhatsApp session is unavailable')
         except (OSError, ValueError, KeyError, TypeError):
@@ -47,6 +51,8 @@ class WhatsApp:
                 result = json.load(response)
         except (OSError, ValueError):
             raise RuntimeError('WhatsApp send outcome unconfirmed; reconcile before retry') from None
+        if not isinstance(result, dict):
+            raise RuntimeError('WhatsApp send outcome unconfirmed; reconcile before retry')
         if not result.get('success') or not result.get('messageId'):
             raise RuntimeError('WhatsApp send acknowledgement missing; reconcile before retry')
         return str(result['messageId'])
@@ -56,6 +62,8 @@ def status():
     """Credential-free status for the private monitor, not the phone number."""
     try:
         config = json.loads(CONFIG.read_text())
+        if not isinstance(config, dict):
+            raise ValueError('Invalid WhatsApp configuration')
     except (OSError, ValueError):
         return {'state':'not_paired'}
     if not config.get('enabled'):
@@ -63,6 +71,8 @@ def status():
     try:
         with urllib.request.urlopen(BASE+'/health', timeout=2) as response:
             health = json.load(response)
+        if not isinstance(health, dict):
+            raise ValueError('Invalid WhatsApp health response')
         state = health.get('status','unavailable') if health.get('session') == SESSION else 'wrong_session'
     except (OSError, ValueError):
         state = 'disconnected'
