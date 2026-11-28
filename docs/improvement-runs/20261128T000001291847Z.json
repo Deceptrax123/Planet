@@ -1,0 +1,301 @@
+{
+  "id": "20261128T000001291847Z",
+  "topic": "Reliable reminders and scheduling",
+  "started": "2026-11-28T00:00:01+00:00",
+  "state": "running",
+  "base": "fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c",
+  "target": "app/reminder_scheduler.py",
+  "verified": false,
+  "events": [
+    {
+      "at": "2026-11-28T00:00:01+00:00",
+      "kind": "evidence",
+      "title": "Public Planet source selected",
+      "body": "Reliable reminders and scheduling\napp/reminder_scheduler.py",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://github.com/Deceptrax123/Planet/blob/fffb922046e4d68a5f3b8e4d73ddb2a4fa7e553c/app/reminder_scheduler.py",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T00:00:02+00:00",
+      "kind": "evidence",
+      "title": "Improving Factuality and Reasoning through Multiagent Debate",
+      "body": "Independent proposals followed by cross-examination.",
+      "actor": "Lab",
+      "model": "",
+      "url": "https://arxiv.org/abs/2305.14325",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T00:00:08+00:00",
+      "kind": "evidence",
+      "title": "Related research from OpenAlex",
+      "body": "Improving Factuality and Reasoning in Language Models through Multiagent Debate (2024) https://doi.org/10.48550/arxiv.2305.14325\nLarge Language Model-Based Agents for Software Engineering: A Survey (2026) https://doi.org/10.1145/3796507\nSWE-Debate: Competitive Multi-Agent Debate for Software Issue Resolution (2026) https://doi.org/10.1145/3744916.3787810",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
+    },
+    {
+      "at": "2026-11-28T00:00:15+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-terra\nDST auditor · gpt-6.1-sol\nQueue auditor · gpt-6-luna",
+      "actor": "Ji Eun",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:00:24+00:00",
+      "kind": "team",
+      "title": "Selected teammates and models",
+      "body": "Lead seat: gpt-6.1-sol\nRace · gpt-6-astra\nClock · gpt-6.1-terra\nPatch · gpt-6.1-sol",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:00:35+00:00",
+      "kind": "proposal",
+      "title": "Recheck quiet hours before delivering a reminder",
+      "body": "A reminder queued during permitted hours can still be sent during quiet hours: quiet_end is applied when it enters the outbox, but not when a retry or delayed delivery is attempted. Before claiming a reminder outbox item, recheck the current time and the reminder’s allow_quiet setting; if delivery is restricted, defer it until 09:00 India time.\nWith a fixed clock and fake sender, queue an ordinary reminder just before 23:00 India time, make its first send request return RetryLater, and tick again after 23:00. Assert that no second send occurs until 09:00. Also verify that a reminder with allow_quiet enabled can retry during that interval.\nThis claim is falsified if the existing scheduler already defers the second send in that deterministic test. The change should preserve retry state and avoid applying reminder-specific policy to unrelated notifications.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:00:48+00:00",
+      "kind": "proposal",
+      "title": "Make the Discord retry limit explicit and consistent",
+      "body": "Ji An: Propose a four-attempt limit for Discord rate-limit failures. The scheduler increments attempts in SQLite but checks the previously fetched item[\"attempts\"] >= 4, so a fresh item currently receives five attempts. Change the check to item[\"attempts\"] + 1 >= 4. Keep WhatsApp retry behavior and live model defaults unchanged.\nUse a temporary SQLite store and a fake Discord sender that always raises RetryLater(1). Start an eligible outbox item at attempts=0 and tick at deterministic UTC times beyond each retry deadline. Assert four sender calls, attempts=4, status='failed', and no fifth call on a later tick. No network is required. This regression is proposed, not executed.\nThe code establishes five current attempts, but does not establish that four is the intended policy. An explicit five-attempt requirement would falsify the proposed policy correction; in that case, retain behavior and document the limit. This change bounds attempts; it does not demonstrate improved delivery success.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:01:01+00:00",
+      "kind": "proposal",
+      "title": "Daily reminders permanently drift after a DST gap",
+      "body": "In app/reminder_scheduler.py, next_occurrence can create a nonexistent local time. For a daily America/New_York reminder at 02:30, advancing from March 7, 2026 produces March 8 at 02:30 EST, which converts to 07:30 UTC—03:30 EDT. Once persisted, subsequent recurrences stay at 03:30. Change candidate validation to round-trip through UTC and skip nonexistent local times, preserving the original wall-clock time. Keep existing quiet-hour defaults.\nProposed deterministic, offline regression: set due_at='2026-03-07T07:30:00+00:00', timezone='America/New_York', repeat='daily', and after=that due time. Under the proposed skip-gap policy, expect '2026-03-09T06:30:00+00:00'; advancing again must yield March 10 at 06:30 UTC. Current code instead returns March 8 at 07:30 UTC, then March 9 at 07:30 UTC. These results are derived from the supplied source, not executed.\nSkipping the missing day's occurrence is a policy choice. Evidence that recurrence intentionally preserves the shifted 03:30 time would falsify the defect claim; a deterministic test showing current code preserves 02:30 on March 9 would falsify the predicted drift. Other recurrence and quiet-hour behavior should remain unchanged.",
+      "actor": "DST auditor",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:01:10+00:00",
+      "kind": "proposal",
+      "title": "Make outbox claims recoverable after a scheduler crash",
+      "body": "A worker changes an outbox row to `sending` before calling the sender, but `recover()` changes every `sending` row to `ambiguous`. A crash between the claim and the send therefore strands a message that was never attempted; retries also have no lease or owner, so multiple scheduler processes could send the same row. Add a persisted claim timestamp and reclaim only claims older than a defined lease, while keeping interrupted sends ambiguous when their send may have begun. This makes claim-to-send crashes retryable without treating uncertain sends as safe to resend.\nAdd a deterministic SQLite regression with a fake sender: claim an outbox item, simulate a crash before sender invocation, advance the injected clock beyond the lease, run recovery and tick, and assert exactly one send and a final `sent` status. Also assert a fresh claim is not reclaimed. No network required.\nA lease shorter than a slow send could permit a second worker to reclaim and duplicate delivery. The proposal is falsified if the existing scheduler lifecycle already guarantees a single process and recovery can distinguish pre-send claims from sends in progress.",
+      "actor": "Queue auditor",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:01:34+00:00",
+      "kind": "proposal",
+      "title": "Bind send completion to the reminder occurrence",
+      "body": "The enqueue transaction rechecks status and due_at, and the outbox claim prevents two workers claiming the same pending item. However, completion checks only reminder status='queued'. If an in-flight reminder is snoozed and its new occurrence becomes queued, the old send completion can mark that newer occurrence sent or advance its recurrence. Change completion to verify that SHA-256(reminder id + ':' + current due_at)[:24] equals the completing outbox id, then update the reminder conditionally on status='queued' AND due_at matching that snapshot. Still record the old outbox item's successful delivery.\nUse a temporary SQLite database, fixed timestamps, and a fake sender. During the old send, change the reminder to a later due_at and queue its new occurrence; then return the old send's success. Assert the old outbox becomes sent while the reminder retains its newer due_at and queued status. Also test cancellation during send and ordinary completion. Falsifier: the proposed guard permits either stale completion to alter the reminder, or prevents ordinary matching completion. Tests are proposed, not executed.\nA status-only conditional update still accepts a newer queued occurrence; an occurrence check without a conditional update leaves a read/update race. This change does not retract delivery once sending begins. Cancellation and snooze implementations were not supplied, so their actual reachability constraints remain unverified. Reusing the exact same due_at also reuses the existing occurrence identity.",
+      "actor": "Race",
+      "model": "gpt-6-astra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:01:47+00:00",
+      "kind": "proposal",
+      "title": "Preserve daily reminder time across spring DST transitions",
+      "body": "In next_occurrence, skip nonexistent local wall times instead of converting them to a different time. For a daily 02:30 reminder in America/New_York, the current code calculates 2025-03-09 02:30 even though that local time does not exist. Converting it to UTC and storing it makes the next recurrence start from 03:30 local, so later reminders drift to 03:30. Define skipping the nonexistent occurrence as the scheduling policy and validate candidate local times by a UTC round trip. Quiet hours and retry timing do not provide sufficient evidence for a further change from the supplied source alone. Race’s findings were not supplied, so they cannot be cross-examined.\nOffline regression: create a daily reminder due at 2025-03-08T07:30:00+00:00 in America/New_York. After that occurrence, assert next_occurrence returns 2025-03-10T06:30:00+00:00; after advancing to that occurrence, assert it returns 2025-03-11T06:30:00+00:00. Both are 02:30 local.\nThe proposed policy skips one occurrence during a spring transition; users may instead expect delivery at the next valid local time. The claim is falsified if the current implementation returns both expected UTC timestamps in the regression, or if the intended product policy requires a different treatment of nonexistent times.",
+      "actor": "Clock",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:01:58+00:00",
+      "kind": "proposal",
+      "title": "Recheck reminder quiet hours before retry delivery",
+      "body": "In app/reminder_scheduler.py, quiet_end() runs only when a reminder enters the outbox. A daytime send that receives RetryLater can therefore retry during quiet hours. Before claiming a reminder-backed outbox item, read its reminder’s allow_quiet value and apply quiet_end(when, allow_quiet). If delivery must wait, update the outbox due_at to that time and skip sending. Preserve existing live model defaults.\nUse a fake sender and fixed clock, without network: enqueue a reminder with allow_quiet=False at 22:59 Asia/Kolkata; have the first send raise RetryLater(120). Tick at 23:01 and assert no additional send and deferral until 09:00 the next day. Tick at 09:00 and assert delivery. Repeat with allow_quiet=True and assert the 23:01 retry proceeds.\nThis proposal covers reminder-backed items only; notification quiet-hour policy requires separate evidence. The claim is falsified if the existing code already prevents the 23:01 retry in this deterministic scenario. Tests were specified, not executed.",
+      "actor": "Patch",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:02:09+00:00",
+      "kind": "critique",
+      "title": "Recheck quiet hours before reminder delivery",
+      "body": "The strongest owner-visible issue is that quiet_end runs only when a reminder enters the outbox. A retry eligible after 23:00 India time can therefore be sent during quiet hours. Recheck the reminder’s current allow_quiet setting before claiming its outbox item; defer restricted delivery until 09:00. Patch independently reaches the same conclusion. Race identifies a credible stale-completion issue, but snooze behavior and reachability are not supplied; test those before changing completion logic. The DST proposals identify plausible permanent wall-clock drift, but skipping the missing occurrence is a product policy choice; delivering at the next valid time while retaining the original recurrence time is an alternative. Ji An correctly identifies five current attempts, b\nWith a fixed clock and fake sender, enqueue a reminder at 22:59 India time, return RetryLater(120), and tick at 23:01. Assert no second send, deferral to 09:00, and successful delivery then. Repeat with allow_quiet enabled and assert the 23:01 retry proceeds. Also verify unrelated notifications retain their existing behavior. This regression is proposed, not executed.\nThe proposed change delays reminders that become eligible during quiet hours; it must preserve retry state and avoid changing notification policy. The supplied source supports the predicted behavior, but no test was run.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:02:22+00:00",
+      "kind": "critique",
+      "title": "Prioritize occurrence-safe completion; reject unsupported retry and lease claims",
+      "body": "Ji An: Race identifies a concrete weakness: completion checks only queued status, so a newer queued occurrence can be changed by an older send. Its occurrence identity check plus conditional update merits a regression, although actual snooze reachability remains unverified. Ji Eun and Patch independently identify the same supported quiet-hours retry gap. DST auditor and Clock identify the same plausible persistent drift, but skipping an occurrence requires a product policy decision. I withdraw my four-attempt correction: the source supports five attempts, not an intended limit of four. Queue auditor overstates duplicate-claim risk: the conditional UPDATE already prevents concurrent claims of the same pending row. A lease cannot establish whether a send began, and expiry\nProposed, not executed: use temporary SQLite, fixed timestamps, and fake senders. During an old send, queue a newer occurrence, then complete the old send; assert only the old outbox becomes sent. Verify ordinary completion and cancellation controls. For quiet hours, fail at 22:59 India time with RetryLater(120); assert no retry at 23:01 and delivery at 09:00, with an allow_quiet=True control. For DST, assert successive local occurrence times across a spring gap before choosing skip versus shift semantics. Characterize the existing five-attempt Discord limit without changing it. Challenge lease recovery with an in-flight slow sender; any second send disproves duplicate safety.\nNo tests were run and no changes were made. Supplied source supports these control-flow findings; it does not establish external lifecycle guarantees, snooze implementation, intended retry count, or DST policy. Preserve ambiguous-send handling and existing live model defaults.",
+      "actor": "Ji An",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:02:38+00:00",
+      "kind": "critique",
+      "title": "DST gap causes persistent recurrence drift; confirm with an offline regression",
+      "body": "The supplied next_occurrence implementation supports the DST finding: adding one day to New York 2026-03-07 02:30 produces nonexistent March 8 02:30 EST. Conversion yields 07:30 UTC, which reloads as 03:30 EDT; subsequent daily occurrences remain at 03:30. DST auditor and Clock identify the same defect, not independent corroborating evidence. Skipping nonexistent candidates after UTC round-trip validation is a reasonable proposed policy, but requires an explicit product decision. An alternative is to shift only the missing occurrence while retaining a separately stored wall-time anchor.\n\nJi Eun and Patch identify a separate, directly supported quiet-hour bypass: eligible outbox retries never call quiet_end again. Clock’s dismissal of that evidence is unsupported. Ji An \nProposed, not executed: call next_occurrence with due_at='2026-03-07T07:30:00+00:00', timezone='America/New_York', repeat='daily', and after equal to that due time. Current code predicts March 8 at 07:30 UTC, then March 9 at 07:30 UTC. Under a skip-gap policy, assert March 9 at 06:30 UTC, then March 10 at 06:30 UTC. Include ordinary daily and weekly cases, weekday filtering, and an autumn-fold case with an explicitly chosen ambiguity policy. These are deterministic offline checks using installed timezone data. Separately, the decisive quiet-hour test is RetryLater(120) at 22:59 India time, followed by a 23:01 tick: restricted reminders must wait until 09:00, while allow_quiet reminders may retry.\nPersistent wall-time drift is supported by source inspection; the preferred missing-time behavior is not specified. Round-trip validation must compare local wall-clock fields rather than reject valid ambiguous times accidentally. No tools or code were executed, and no changes were made. Preserve existing live model defaults and India-time quiet hours.",
+      "actor": "DST auditor",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:02:47+00:00",
+      "kind": "critique",
+      "title": "No change: recovery cannot distinguish pre-send claims from interrupted sends",
+      "body": "The claim state is persisted before `sender.send()`, and `recover()` marks every `sending` row `ambiguous`. A crash at either point—before or during the external send—leaves the same database state. The supplied source has no claim timestamp, process owner, or send-start marker, so it cannot establish that a pre-send crash strands a message that is safe to retry. Adding a lease alone risks reclaiming a slow in-flight send and duplicating delivery. There is also no supplied lifecycle evidence that multiple scheduler processes run concurrently, so the duplicate-claim claim is unproven. Prefer retaining ambiguous recovery absent a safe way to distinguish those cases.\nA deterministic SQLite test can confirm the current behavior: set an outbox row to `sending`, call `recover()`, and assert it becomes `ambiguous` and is not selected for retry by `tick()`. That demonstrates the current policy, but does not justify a change. A safe recovery change needs an explicit send-boundary protocol and tests for crashes before and after that boundary, plus a slow-send/lease case if leases are introduced.\nThe proposal is plausible as an availability improvement, but its core assumption—that a reclaimed claim is known not to have reached the sender—is unsupported. Changing recovery without that distinction can turn uncertain delivery into duplicate delivery.",
+      "actor": "Queue auditor",
+      "model": "gpt-6-luna",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:03:12+00:00",
+      "kind": "critique",
+      "title": "Guard send completion by occurrence identity and conditional update",
+      "body": "Race’s fix is supported by the supplied scheduler: completion checks only queued status, allowing an older send to complete a newer queued occurrence. Verify the current reminder’s occurrence hash against the completing outbox ID, then update with WHERE status='queued' AND due_at=?; still record the old outbox delivery. Actual snooze/cancel reachability remains unverified because those implementations were not supplied. The enqueue transaction already rechecks status and due_at; the conditional outbox claim prevents simultaneous claims of the same pending item.\n\nQueue auditor’s duplicate-claim premise is unsupported: leases alone cannot distinguish a crash before invocation from a crash after delivery. Keep uncertain sends ambiguous. Ji Eun and Patch identify a supporte\nProposed offline regression: during an old occurrence’s fake send, move its reminder to a later due_at and queue that occurrence. Return success and assert the old outbox is sent while the newer reminder remains queued and unchanged. Separately interleave cancellation or snooze between completion’s reminder read and update to verify the conditional update rejects stale state. Include ordinary one-shot and recurring completion controls. For claims, have two workers select the same pending item and assert only one conditional claim succeeds. These tests are specified, not executed.\nCancellation after a successful claim cannot guarantee suppression of an already-started external send. The source does not establish cancellation’s transaction semantics. Exact due_at reuse retains the same occurrence identity; a persisted generation would be needed to distinguish such replacements. Recovery during another worker’s active send remains a separate lifecycle concern. No tools were called, no changes were made, and live model defaults remain unchanged.",
+      "actor": "Race",
+      "model": "gpt-6-astra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:03:23+00:00",
+      "kind": "critique",
+      "title": "Reminder scheduling review",
+      "body": "The source supports two concrete defects: retries can cross into quiet hours, and daily recurrences can drift after a spring DST gap. Patch’s quiet-hours proposal has a clear reproduction; recheck reminder-backed items before claiming them, preserving retry state. The DST auditors correctly identify drift, but skipping the nonexistent occurrence is a product policy choice; shifting that occurrence while preserving the original wall-clock schedule is another option. Race’s stale-completion scenario follows from the status-only check, provided snooze can requeue a new occurrence while the old send is in flight; the supplied source does not establish that reachability. The proposed occurrence-identity guard and conditional update address that scenario. Ji An’s five-attempt\nProposed offline, fixed-clock regressions: (1) retry at 23:01 India time after a 22:59 rate limit; assert deferral until 09:00, with allow_quiet as a control; (2) advance a New York daily 02:30 reminder across the 2026 spring transition and check the following day remains at 02:30 under the chosen gap policy; (3) have a fake sender requeue a snoozed occurrence before returning success and assert the old completion leaves the new occurrence queued, alongside normal-completion and cancellation controls. These tests were not executed.\nQuiet-hour rechecks should apply only to reminder-backed items unless notification policy is established separately. DST gap handling requires an explicit policy. Race’s proposed regression proves the scheduler’s behavior under an interleaving, but actual snooze reachability requires inspecting its implementation. The supplied source does not establish the intended Discord retry limit or a safe lease-based recovery protocol.",
+      "actor": "Clock",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:03:36+00:00",
+      "kind": "critique",
+      "title": "Enforce reminder quiet hours at delivery time",
+      "body": "Support Ji Eun’s and Patch’s shared proposal: quiet_end() runs only at enqueue, so eligible retries can send after 23:00 India time. Before claiming a reminder-backed item, read allow_quiet and defer its outbox due_at to quiet_end(when, allow_quiet) when necessary, preserving retry state. Race identifies a separate credible occurrence-identity flaw, though snooze reachability needs supporting source. Ji An proves five attempts, but supplies no requirement for four. DST auditor and Clock identify plausible permanent drift; skipping the missing occurrence requires an explicit policy choice. Queue auditor’s timestamp cannot distinguish a pre-send crash from an uncertain send, and the existing conditional claim already prevents simultaneous claims of the same pending row.\nProposed, not executed: use temporary SQLite, a fixed clock, and a fake sender. At 22:59 Asia/Kolkata, send an ordinary reminder and raise RetryLater(120). At 23:01, assert the sender call count remains one, the item remains retryable, and due_at becomes next-day 09:00. At 09:00, assert successful delivery. With allow_quiet=True, assert the second call occurs at 23:01. Include an already queued, delayed item and verify unrelated notifications remain unchanged. The current delivery loop predicts a second call at 23:01, making this regression decisive.\nNo patch or tests were executed. Reminder-specific policy must not be applied to unrelated notifications. Keep next_attempt intact so deferral cannot shorten a retry delay. Preserve live model defaults. Treat occurrence completion guards as a separate change; do not introduce lease-based resending without evidence that uncertain delivery can be reconciled safely.",
+      "actor": "Patch",
+      "model": "gpt-6.1-sol",
+      "url": "",
+      "provider": "openai-codex"
+    },
+    {
+      "at": "2026-11-28T00:03:49+00:00",
+      "kind": "decision",
+      "title": "Enforce reminder quiet hours at delivery time",
+      "body": "Select the quiet-hours repair proposed by Ji Eun and Patch. The supplied scheduler applies quiet hours when enqueueing, but does not recheck them before a retry or delayed delivery. Recheck reminder-backed items before claiming them, defer restricted delivery until 09:00 India time, and preserve retry state.\nProposed, not executed: with a fixed clock and fake sender, return RetryLater(120) at 22:59 India time. At 23:01, assert no second send and deferral until 09:00; then assert delivery at 09:00. Repeat with allow_quiet enabled and assert the 23:01 retry proceeds. Verify unrelated notifications retain their behavior.\nDeferral must preserve next_attempt so it cannot shorten a retry delay. No test has run, and proceeding authorizes an isolated experiment, not deployment.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "advanced"
+    },
+    {
+      "at": "2026-11-28T00:03:49+00:00",
+      "kind": "idea",
+      "title": "Recheck quiet hours before delivering a reminder",
+      "body": "The delivery-time quiet-hours gap follows directly from the supplied control flow and has a decisive offline regression.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "selected",
+      "author": "Ji Eun"
+    },
+    {
+      "at": "2026-11-28T00:03:50+00:00",
+      "kind": "idea",
+      "title": "Recheck reminder quiet hours before retry delivery",
+      "body": "Independently proposes the same repair and adds useful delayed-item and notification controls.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Patch"
+    },
+    {
+      "at": "2026-11-28T00:03:50+00:00",
+      "kind": "idea",
+      "title": "Make the Discord retry limit explicit and consistent",
+      "body": "The five-attempt behavior is supported, but an intended four-attempt limit is not; the proposed change was withdrawn.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "Ji An"
+    },
+    {
+      "at": "2026-11-28T00:03:51+00:00",
+      "kind": "idea",
+      "title": "Daily reminders permanently drift after a DST gap",
+      "body": "Persistent wall-clock drift is plausible, but the correct policy for nonexistent local times is unspecified.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "DST auditor"
+    },
+    {
+      "at": "2026-11-28T00:03:51+00:00",
+      "kind": "idea",
+      "title": "Make outbox claims recoverable after a scheduler crash",
+      "body": "A lease cannot distinguish a pre-send crash from an uncertain in-flight delivery; the auditor withdrew the recovery change.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "rejected",
+      "author": "Queue auditor"
+    },
+    {
+      "at": "2026-11-28T00:03:52+00:00",
+      "kind": "idea",
+      "title": "Bind send completion to the reminder occurrence",
+      "body": "The stale-completion interleaving is credible, but actual snooze and requeue reachability is not established by the supplied source.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "deferred",
+      "author": "Race"
+    },
+    {
+      "at": "2026-11-28T00:03:52+00:00",
+      "kind": "idea",
+      "title": "Preserve daily reminder time across spring DST transitions",
+      "body": "Supports the selected quiet-hours repair; the separate DST policy decision is deferred.",
+      "actor": "Ji Eun",
+      "model": "gpt-6.1-terra",
+      "url": "",
+      "provider": "openai-codex",
+      "disposition": "combined",
+      "author": "Clock"
+    }
+  ],
+  "github": "",
+  "outcome": "",
+  "updated": "2026-11-28T00:03:52+00:00",
+  "nextFocus": "app/reminder_scheduler.py",
+  "decision": "advanced"
+}
