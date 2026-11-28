@@ -311,13 +311,23 @@
       "url": "",
       "provider": "openai-codex",
       "verdict": "approve"
+    },
+    {
+      "at": "2026-11-28T12:03:40+00:00",
+      "kind": "release",
+      "title": "Verified harness published",
+      "body": "The regression changes test code only.",
+      "actor": "Lab",
+      "model": "",
+      "url": "",
+      "provider": ""
     }
   ],
   "github": "https://github.com/Deceptrax123/Planet/tree/improvement/20261128T120002688543Z",
   "outcome": "The harness detected the intentional mutation, passed on the original, and both reviewers approved.",
-  "updated": "2026-11-28T12:03:36+00:00",
+  "updated": "2026-11-28T12:03:40+00:00",
   "nextFocus": "tests/test_assistant.py",
   "decision": "advanced",
-  "publishedCommit": "bcc6d1cf71dec31dadd27533ef43b1046883ece9",
+  "publishedCommit": "d8cf467d0929da2a6893f41a6d9b095e081ef681",
   "candidateCommit": "acc77d31df81146bf40ccd2237d33507679593c7"
 }
